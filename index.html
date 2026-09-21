@@ -25,7 +25,6 @@ body{margin:0;background:var(--fondo);color:var(--tinta);font:400 16px/1.5 var(-
 h1,h2,h3,p{margin:0}
 button,input,textarea,select{font:inherit;color:inherit}
 
-  
 .app{display:grid;grid-template-columns:320px minmax(0,1fr);gap:64px;max-width:1240px;margin:0 auto;padding:0 32px}
 
 /* ---- Panel de puntaje ---- */
@@ -76,6 +75,7 @@ h3{font:600 1.02rem/1.3 var(--sans)}
 .campo{display:flex;flex-direction:column;gap:6px}
 .campo.ancho{grid-column:1 / -1}
 .campo label,.obs label{font-size:.9rem;font-weight:500}
+.ayuda{font-size:.85rem;color:var(--tinta2)}
 .campo label i{font-style:normal;color:var(--tinta2);font-weight:400}
 input[type=text],input[type=email],input[type=tel],input[type=date],input[type=password],select,textarea{
   width:100%;padding:10px 12px;border:1px solid var(--linea);border-radius:6px;background:var(--papel);min-height:44px}
@@ -138,7 +138,8 @@ tfoot td{font-weight:600;border-bottom:0;background:var(--primario-t)}
 .confirma{margin:0 0 28px;padding:22px 24px;border:1px solid var(--primario);border-radius:6px;background:var(--primario-t)}
 .confirma h2{font-size:1.5rem}
 .confirma p{margin-top:6px}
-.confirma .btn{margin-top:16px}
+.confirma-acc{display:flex;gap:12px;flex-wrap:wrap;margin-top:16px}
+
 .prueba{margin:0 0 24px;padding:10px 14px;border-radius:6px;background:var(--alerta-t);color:var(--alerta);font-size:.9rem}
 [hidden]{display:none !important}
 
@@ -192,12 +193,13 @@ tfoot td{font-weight:600;border-bottom:0;background:var(--primario-t)}
           <div class="sec-cab"><h2>Información general</h2></div>
           <div class="campos">
             <div class="campo"><label for="fecha">Fecha de la entrevista</label><input type="date" id="fecha" name="fecha" required></div>
-            <div class="campo"><label for="programa">Programa</label><select id="programa" name="programa" required><option value="">Selecciona un programa</option></select></div>
+            <div class="campo"><label for="periodo">Periodo académico</label><select id="periodo" name="periodo" required><option value="">Selecciona el periodo</option></select></div>
+            <div class="campo ancho"><label for="programa">Programa</label><select id="programa" name="programa" required><option value="">Selecciona un programa</option></select></div>
             <div class="campo ancho"><label for="nombre">Nombre del aspirante</label><input type="text" id="nombre" name="nombre" autocomplete="off" required></div>
             <div class="campo"><label for="documento">Documento de identidad</label><input type="text" id="documento" name="documento" inputmode="numeric" autocomplete="off" required></div>
             <div class="campo"><label for="celular">Celular <i>(opcional)</i></label><input type="tel" id="celular" name="celular" autocomplete="off"></div>
             <div class="campo ancho"><label for="correo">Correo <i>(opcional)</i></label><input type="email" id="correo" name="correo" autocomplete="off"></div>
-            <div class="campo ancho"><label for="entrevistadores">Entrevistador(es)</label><input type="text" id="entrevistadores" name="entrevistadores" autocomplete="off" required></div>
+            <div class="campo ancho"><label for="entrevistadores">Nombre del evaluador</label><input type="text" id="entrevistadores" name="entrevistadores" autocomplete="off" required><p class="ayuda">Este nombre y la fecha y hora del registro forman tu firma digital. Cada evaluador diligencia la rúbrica por separado.</p></div>
           </div>
         </section>
 
@@ -225,7 +227,7 @@ tfoot td{font-weight:600;border-bottom:0;background:var(--primario-t)}
             <div class="campo ancho"><label for="recomendaciones">Recomendaciones académicas</label><textarea id="recomendaciones" name="recomendaciones"></textarea></div>
             <div class="campo ancho"><label for="fortalezas">Fortalezas del aspirante</label><textarea id="fortalezas" name="fortalezas"></textarea></div>
             <div class="campo ancho"><label for="porFortalecer">Aspectos por fortalecer</label><textarea id="porFortalecer" name="porFortalecer"></textarea></div>
-            <div class="campo ancho"><label for="coordinacion">Coordinación académica <i>(opcional)</i></label><input type="text" id="coordinacion" name="coordinacion" autocomplete="off"></div>
+            <div class="campo ancho"><label for="coordinacion">Coordinación académica <i>(opcional)</i></label><select id="coordinacion" name="coordinacion"><option value="">Selecciona la coordinación</option></select></div>
           </div>
           <div class="acciones">
             <div class="campo" id="campoClave" hidden style="width:min(100%,320px)"><label for="clave">Clave de acceso</label><input type="password" id="clave" name="clave" autocomplete="off"></div>
@@ -240,8 +242,7 @@ tfoot td{font-weight:600;border-bottom:0;background:var(--primario-t)}
 </div>
 
 <script>
-/* Solo para el modo web (página alojada fuera de Google, p. ej. GitHub Pages):
-   pega aquí la URL de la aplicación web de Apps Script (termina en /exec).
+/* Pega aquí la URL de la aplicación web de Apps Script (termina en /exec).
    Dentro de Apps Script se deja vacía. */
 const API_URL = 'https://script.google.com/macros/s/AKfycbzqkrvFfg8EW11LNrByYDhANz-xPe5sVu0VAscvEdwjEAOi8cBxkNlJEOyKC9fT2b1X/exec';
 
@@ -399,14 +400,19 @@ function construirSecciones() {
 }
 
 /* ---------- cálculo (misma regla que el servidor) ---------- */
-function calcular() {
+function respuestasDelForm() {
+  const r = {};
+  R.secciones.forEach(function (s) { s.criterios.forEach(function (c) { r[c.id] = valor('c-' + c.id); }); });
+  return r;
+}
+function calcularDe(resp) {
   const detalle = {}, sec = {};
   let total = 0, faltan = 0, criterios = 0;
   R.secciones.forEach(function (s) {
     let suma = 0;
     s.criterios.forEach(function (c) {
       criterios++;
-      const v = valor('c-' + c.id);
+      const v = resp[c.id] === undefined || resp[c.id] === null ? '' : String(resp[c.id]);
       let pts = null;
       if (c.niveles) {
         const n = c.niveles.filter(function (x) { return x.id === v; })[0];
@@ -422,6 +428,7 @@ function calcular() {
   });
   return { detalle: detalle, sec: sec, total: total, faltan: faltan, criterios: criterios };
 }
+function calcular() { return calcularDe(respuestasDelForm()); }
 
 let decisionManual = false;
 let autoId = null;
@@ -512,11 +519,12 @@ function validar() {
   const e = [];
   const falta = function (name, msg) { if (!valor(name).trim()) e.push({ msg: msg, campo: name }); };
   falta('fecha', 'Falta la fecha de la entrevista');
+  falta('periodo', 'Falta seleccionar el periodo académico');
   falta('programa', 'Falta seleccionar el programa');
   falta('nombre', 'Falta el nombre del aspirante');
   falta('documento', 'Falta el documento de identidad');
-  falta('entrevistadores', 'Falta el nombre del entrevistador');
-  if (MODO_WEB && !valor('clave')) e.push({ msg: 'Falta la clave de acceso', campo: 'clave' });
+  falta('entrevistadores', 'Falta el nombre del evaluador');
+  if (CONECTADO && !valor('clave')) e.push({ msg: 'Falta la clave de acceso', campo: 'clave' });
   const correo = valor('correo').trim();
   if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) e.push({ msg: 'El correo no tiene un formato válido', campo: 'correo' });
   R.requisitos.forEach(function (r) {
@@ -581,7 +589,7 @@ function mostrarErrores(lista) {
 
 function armarPayload() {
   const general = {};
-  ['fecha', 'programa', 'nombre', 'documento', 'correo', 'celular', 'entrevistadores'].forEach(function (k) { general[k] = valor(k).trim(); });
+  ['fecha', 'periodo', 'programa', 'nombre', 'documento', 'correo', 'celular', 'entrevistadores'].forEach(function (k) { general[k] = valor(k).trim(); });
   const requisitos = {};
   R.requisitos.forEach(function (r) { requisitos[r.id] = valor('r-' + r.id); });
   const respuestas = {}, observaciones = { req: valor('o-req').trim() };
@@ -608,33 +616,23 @@ function armarPayload() {
   };
 }
 
-const EN_APPS_SCRIPT = typeof google !== 'undefined' && google.script && google.script.run;
-const MODO_WEB = !EN_APPS_SCRIPT && !!API_URL;
-const CONECTADO = EN_APPS_SCRIPT || MODO_WEB;
+const CONECTADO = !!API_URL;
 let sucio = false, guardado = false, guardando = false;
 
 const MSG_RED = 'No se pudo conectar con el servidor de registro. Revisa la conexión y que la implementación de Apps Script permita acceso a "Cualquier persona".';
 
 function apiDatos(ok, fallo) {
-  if (EN_APPS_SCRIPT) {
-    google.script.run.withSuccessHandler(ok).withFailureHandler(fallo).obtenerDatos();
-    return;
-  }
   fetch(API_URL + (API_URL.indexOf('?') > -1 ? '&' : '?') + 'accion=datos')
     .then(function (r) { return r.json(); })
     .then(ok, function () { fallo(new Error(MSG_RED)); });
 }
 
 function apiGuardar(payload, ok, fallo) {
-  if (EN_APPS_SCRIPT) {
-    google.script.run.withSuccessHandler(ok).withFailureHandler(fallo).guardarEvaluacion(payload);
-    return;
-  }
   // "text/plain" evita la solicitud previa (preflight) que Apps Script no responde.
   fetch(API_URL, {
     method: 'POST',
     headers: { 'Content-Type': 'text/plain;charset=utf-8' },
-    body: JSON.stringify({ clave: valor('clave'), payload: payload })
+    body: JSON.stringify({ accion: 'guardar', clave: valor('clave'), payload: payload })
   })
     .then(function (r) { return r.json(); })
     .then(function (r) { if (r && r.ok) ok(r); else fallo(new Error((r && r.error) || 'El servidor no pudo guardar la evaluación.')); },
@@ -643,7 +641,7 @@ function apiGuardar(payload, ok, fallo) {
 
 function enviar(payload, ok, fallo) {
   if (CONECTADO) { apiGuardar(payload, ok, fallo); return; }
-  setTimeout(function () {
+  setTimeout(function () { // vista previa sin servidor
     const c = calcular();
     ok({ ok: true, id: 'EV-PRUEBA', total: payload.concepto === 'continua' ? c.total : null,
          concepto: payload.concepto === 'continua' ? (R.decision.filter(function (d) { return d.id === payload.decision; })[0] || decisionPorPuntaje(c.total)).concepto : null,
@@ -659,21 +657,26 @@ form.addEventListener('submit', function (ev) {
   if (lista.length) { mostrarErrores(lista); return; }
   marcarErrores([]);
   guardando = true;
-  if (MODO_WEB) { try { sessionStorage.setItem('rubrica_clave', valor('clave')); } catch (e) { /* sin almacenamiento */ } }
+  if (CONECTADO) { try { sessionStorage.setItem('rubrica_clave', valor('clave')); } catch (e) { /* sin almacenamiento */ } }
   const btn = $('guardar');
   btn.disabled = true;
   btn.textContent = 'Guardando…';
-  enviar(armarPayload(), function (r) {
+  const enviado = armarPayload();
+  enviar(enviado, function (r) {
     guardando = false; guardado = true;
     $('campos').disabled = true;
     btn.textContent = 'Evaluación guardada';
     const c = $('confirmacion');
+    const firma = 'Firmado digitalmente por ' + enviado.general.entrevistadores + ' el ' + (r.registrado || fechaHora(new Date())) + '.';
     c.replaceChildren(
       el('h2', { text: 'Evaluación guardada' }),
       el('p', { text: r.continua
-        ? 'Registro ' + r.id + ': ' + r.total + ' de 100 puntos. Decisión del comité: ' + r.concepto + '.'
+        ? 'Registro ' + r.id + ': ' + r.total + ' de 100 puntos. Concepto registrado: ' + r.concepto + '.'
         : 'Registro ' + r.id + ': el aspirante no continúa la evaluación, se guardó sin puntaje.' }),
-      el('button', { type: 'button', class: 'btn', id: 'nueva', text: 'Evaluar otro aspirante' }));
+      el('p', { text: firma }),
+      el('p', { class: 'nota', text: 'El reporte consolidado del aspirante, con la evaluación de todos los evaluadores, se descarga desde la herramienta de resultados.' }),
+      el('div', { class: 'confirma-acc' },
+        el('button', { type: 'button', class: 'btn', id: 'nueva', text: 'Evaluar otro aspirante' })));
     c.hidden = false;
     $('nueva').addEventListener('click', nueva);
     c.focus();
@@ -691,6 +694,11 @@ form.addEventListener('submit', function (ev) {
     caja.scrollIntoView({ block: 'start' });
   });
 });
+
+function fechaHora(d) {
+  const p = function (n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
 
 function nueva() {
   const claveActual = valor('clave');
@@ -714,9 +722,11 @@ function iniciar(datos) {
   construirRequisitos();
   construirSecciones();
   datos.programas.forEach(function (p) { $('programa').append(el('option', { value: p, text: p })); });
+  (datos.periodos || []).forEach(function (p) { $('periodo').append(el('option', { value: p, text: p })); });
+  (datos.coordinadores || []).forEach(function (n) { $('coordinacion').append(el('option', { value: n, text: n })); });
   $('fecha').value = hoyLocal();
   $('notaGuardar').textContent = 'Se guardará como una fila nueva en la hoja de evaluaciones.';
-  if (MODO_WEB) {
+  if (CONECTADO) {
     $('campoClave').hidden = false;
     try { form.elements.clave.value = sessionStorage.getItem('rubrica_clave') || ''; } catch (e) { /* sin almacenamiento */ }
   }
@@ -744,7 +754,7 @@ if (CONECTADO) {
 } else if (window.DATOS_PRUEBA) {
   iniciar(window.DATOS_PRUEBA);
 } else {
-  falloCarga(new Error('Falta configurar API_URL en este archivo, o abrir la página desde la URL de Apps Script.'));
+  falloCarga(new Error('Falta configurar API_URL en este archivo con la URL de la aplicación web de Apps Script.'));
 }
 </script>
 </body>

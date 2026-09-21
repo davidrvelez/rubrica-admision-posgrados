@@ -25,7 +25,7 @@ body{margin:0;background:var(--fondo);color:var(--tinta);font:400 16px/1.5 var(-
 h1,h2,h3,p{margin:0}
 button,input,select{font:inherit;color:inherit}
 [hidden]{display:none !important}
-.pagina{max-width:1180px;margin:0 auto;padding:32px 28px 96px}
+.pagina{max-width:1440px;margin:0 auto;padding:32px 28px 96px}
 .cab{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:22px;border-bottom:1px solid var(--linea)}
 .inst{font-size:.85rem;color:var(--tinta2)}
 h1{font:500 2rem/1.15 var(--serif);margin-top:4px}
@@ -63,7 +63,7 @@ input:focus-visible,select:focus-visible{outline:2px solid var(--primario);outli
 .dist-leyenda span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;background:var(--c)}
 
 /* filtros y lista */
-.filtros{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,2fr) minmax(0,1fr) auto;gap:12px;align-items:end;margin-top:28px}
+.filtros{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,2fr) minmax(0,1fr) minmax(0,1.3fr);gap:12px;align-items:end;margin-top:28px}
 .chk{display:flex;align-items:center;gap:8px;min-height:44px;font-size:.92rem}
 .chk input{width:18px;height:18px;accent-color:var(--primario)}
 .tabla-lista{margin-top:16px;overflow-x:auto;border:1px solid var(--linea);border-radius:6px;background:var(--papel)}
@@ -71,8 +71,8 @@ table{width:100%;border-collapse:collapse;font-size:.95rem}
 th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--linea2);vertical-align:top}
 thead th{background:var(--primario-t);font-weight:600;white-space:nowrap}
 tbody tr:last-child td{border-bottom:0}
-.lista td:first-child{min-width:200px}
-.lista td:nth-child(2){min-width:210px}
+.lista td:first-child{min-width:180px}
+.lista td:nth-child(2){min-width:190px}
 .lista tbody tr{cursor:pointer}
 .lista tbody tr:hover{background:#F7FAF9}
 .enlace{background:none;border:0;padding:0;text-align:left;font-weight:600;color:var(--primario);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
@@ -127,6 +127,28 @@ details .cuerpo{padding:0 16px 14px}
 details .cuerpo h4{margin:12px 0 2px;font-size:.88rem;color:var(--tinta2)}
 details .cuerpo p{white-space:pre-wrap}
 
+.tit-sec{margin-top:40px}
+.filtros-acc{display:flex;gap:12px 18px;flex-wrap:wrap;align-items:center;margin-top:12px}
+.btn.min{min-height:38px;padding:0 16px;font-size:.92rem}
+.analisis{min-width:960px}
+.analisis th,.analisis td,.lista th,.lista td{padding:10px 11px}
+.analisis td:first-child{min-width:160px}
+.analisis th.n,.analisis td.n{text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+.analisis th{vertical-align:bottom;font-size:.85rem;white-space:normal}
+.analisis th.n{white-space:normal;min-width:52px}
+.lista .etiqueta{white-space:normal}
+.lista td.tot{white-space:normal;min-width:110px}
+.analisis th i{display:inline-block;width:9px;height:9px;border-radius:50%;margin-right:5px;background:var(--c)}
+.analisis tbody tr{cursor:pointer}
+.analisis tbody tr:hover{background:#F7FAF9}
+.analisis tbody tr.sel{background:var(--primario-t);box-shadow:inset 4px 0 0 var(--primario)}
+.analisis tbody tr:focus-visible{outline:2px solid var(--primario);outline-offset:-2px}
+.analisis tfoot td{font-weight:600;background:var(--linea2);border-bottom:0}
+.analisis .cero{color:#A9B5B0}
+.mini{display:block;width:64px;height:5px;margin-top:4px;margin-left:auto;background:var(--linea2);border-radius:3px;overflow:hidden}
+.mini i{display:block;height:100%}
+td.dif-alta{background:var(--alerta-t);color:var(--alerta);font-weight:600}
+
 @media (max-width:820px){
   .pagina{padding:20px 14px 80px}
   .resumen{grid-template-columns:repeat(2,minmax(0,1fr))}
@@ -166,17 +188,28 @@ details .cuerpo p{white-space:pre-wrap}
     <div class="resumen" id="resumen"></div>
     <div class="dist" id="dist"></div>
 
+    <h2 class="tit-sec">Análisis por programa y periodo</h2>
+    <p class="nota" style="margin-top:4px">Cada fila resume a los aspirantes de un programa en un periodo. Selecciona una fila para ver sus aspirantes más abajo.</p>
+    <div class="tabla-lista"><table class="analisis"><thead id="anHead"></thead><tbody id="anFilas"></tbody><tfoot id="anPie"></tfoot></table></div>
+
+    <h2 class="tit-sec" id="aspirantes">Aspirantes</h2>
     <div class="filtros">
       <div class="campo"><label for="buscar">Buscar por nombre, documento o evaluador</label><input type="search" id="buscar" autocomplete="off"></div>
       <div class="campo"><label for="fProg">Programa</label><select id="fProg"></select></div>
+      <div class="campo"><label for="fPer">Periodo</label><select id="fPer"></select></div>
       <div class="campo"><label for="orden">Ordenar por</label>
-        <select id="orden"><option value="reciente">Más recientes</option><option value="nombre">Nombre</option><option value="promedio">Promedio (mayor a menor)</option></select></div>
-      <label class="chk"><input type="checkbox" id="fMulti"> Solo con 2 o más evaluaciones</label>
+        <select id="orden"><option value="reciente">Más recientes</option><option value="programa">Programa y periodo</option><option value="nombre">Nombre</option><option value="promedio">Promedio (mayor a menor)</option></select></div>
+    </div>
+    <div class="filtros-acc">
+      <label class="chk"><input type="checkbox" id="fMulti"> Solo con evaluación completa</label>
+      <button type="button" class="btn sec min" id="quitar">Quitar filtros</button>
+      <button type="button" class="btn sec min" id="csv">Exportar lista (CSV)</button>
+      <span class="nota" id="conteo"></span>
     </div>
 
     <div class="tabla-lista">
       <table class="lista">
-        <thead><tr><th>Aspirante</th><th>Programa</th><th>Evaluaciones</th><th>Totales</th><th>Promedio</th><th>Concepto por promedio</th><th>Última</th></tr></thead>
+        <thead><tr><th>Aspirante</th><th>Programa</th><th>Periodo</th><th>Eval.</th><th>Totales</th><th>Promedio</th><th title="Diferencia entre el puntaje más alto y el más bajo">Dif.</th><th>Estado final</th><th title="Puesto por promedio dentro de su programa y periodo (solo evaluación completa)">Puesto</th><th>Última</th></tr></thead>
         <tbody id="filas"></tbody>
       </table>
       <p class="vacio" id="sinFilas" hidden>Ningún aspirante coincide con los filtros.</p>
@@ -223,12 +256,31 @@ function decisionPorPuntaje(total) {
   for (let i = 0; i < R.decision.length; i++) if (total >= R.decision[i].desde) return R.decision[i];
   return R.decision[R.decision.length - 1];
 }
-const COLOR = { admitido: ['#0B5D4B', '#E1F0EB', '#0B5D4B'], recomendaciones: ['#5FA58E', '#E6F3EE', '#25594A'], espera: ['#D69A2D', '#FFF1D6', '#7A4300'], no_admitido: ['#B9483A', '#FDECEA', '#8C2B1F'] };
-function etiquetaConcepto(d) {
-  if (!d) return el('span', { class: 'sub', text: 'Sin puntaje' });
-  const c = COLOR[d.id] || ['#999', '#eee', '#333'];
-  return el('span', { class: 'etiqueta', style: '--c-t:' + c[1] + ';--c-x:' + c[2], text: d.concepto });
+const COLOR = {
+  admitido: ['#0B5D4B', '#E1F0EB', '#0B5D4B'],
+  recomendaciones: ['#5FA58E', '#E6F3EE', '#25594A'],
+  espera: ['#D69A2D', '#FFF1D6', '#7A4300'],
+  no_admitido: ['#B9483A', '#FDECEA', '#8C2B1F'],
+  no_continua: ['#6B7A75', '#E6ECE9', '#3B4A45'],
+  en_evaluacion: ['#9AA8A3', '#EEF1F0', '#51625C']
+};
+const DECISIONES = ['admitido', 'recomendaciones', 'espera', 'no_admitido']; // estados con puntaje y evaluación completa
+const ORDEN_ESTADOS = ['admitido', 'recomendaciones', 'espera', 'no_admitido', 'no_continua', 'en_evaluacion'];
+const CORTO = { admitido: 'Admitido', recomendaciones: 'Con recomend.', espera: 'Lista de espera', no_admitido: 'No admitido', no_continua: 'No continúa', en_evaluacion: 'En evaluación' };
+const DIF_ALTA = 20; // puntos de diferencia entre evaluadores que se marcan como alerta
+let REQ = 2;         // evaluadores requeridos (lo define el servidor)
+
+function nombreEstado(id) {
+  if (id === 'no_continua') return 'No continúa (requisitos)';
+  if (id === 'en_evaluacion') return 'En evaluación';
+  const d = R.decision.filter(function (x) { return x.id === id; })[0];
+  return d ? d.concepto : id;
 }
+function etiquetaEstado(e) {
+  const c = COLOR[e.id] || ['#999', '#eee', '#333'];
+  return el('span', { class: 'etiqueta', style: '--c-t:' + c[1] + ';--c-x:' + c[2], text: e.texto });
+}
+function periodoTxt(g) { return g.periodo || 'Sin periodo'; }
 function maxCrit(c) { return c.niveles ? Math.max.apply(null, c.niveles.map(function (n) { return n.puntos; })) : c.max; }
 function esUnico(s) { return s.criterios.length === 1 && !!s.criterios[0].niveles; }
 function nombreCrit(c) { return c.id + (c.id.indexOf('.') > -1 ? ' ' : '. ') + c.titulo; }
@@ -251,7 +303,7 @@ function consultar(clave) {
 function cargar(clave, alTerminar) {
   return consultar(clave).then(function (r) {
     CLAVE = clave;
-    R = r.rubrica; EVALS = r.evaluaciones;
+    R = r.rubrica; EVALS = r.evaluaciones; REQ = r.evaluadoresRequeridos || 2;
     armarGrupos();
     $('acceso').hidden = true;
     $('accSesion').hidden = false;
@@ -260,12 +312,20 @@ function cargar(clave, alTerminar) {
   });
 }
 
-/* ---------- agrupar por aspirante y programa ---------- */
+/* ---------- agrupar por aspirante, programa y periodo ---------- */
+function estadoDe(g) {
+  const n = g.evals.length;
+  if (n < REQ) return { id: 'en_evaluacion', texto: 'En evaluación (' + n + ' de ' + REQ + ')' };
+  if (g.promedio === null) return { id: 'no_continua', texto: nombreEstado('no_continua') };
+  const d = decisionPorPuntaje(g.promedio);
+  return { id: d.id, texto: d.concepto };
+}
+
 function armarGrupos() {
   const mapa = {};
   EVALS.forEach(function (e) {
-    const k = normDoc(e.documento) + '|' + e.programa;
-    (mapa[k] = mapa[k] || { clave: k, documento: e.documento, programa: e.programa, evals: [] }).evals.push(e);
+    const k = normDoc(e.documento) + '|' + e.programa + '|' + (e.periodo || '');
+    (mapa[k] = mapa[k] || { clave: k, documento: e.documento, programa: e.programa, periodo: e.periodo || '', evals: [] }).evals.push(e);
   });
   GRUPOS = Object.keys(mapa).map(function (k) {
     const g = mapa[k];
@@ -275,62 +335,157 @@ function armarGrupos() {
     g.correo = ult.correo || (g.evals.filter(function (e) { return e.correo; }).pop() || {}).correo || '';
     g.celular = ult.celular || (g.evals.filter(function (e) { return e.celular; }).pop() || {}).celular || '';
     g.ultima = ult.registrado;
-    g.promedio = promedio(g.evals.map(function (e) { return e.total; }));
+    const tot = g.evals.map(function (e) { return e.total; }).filter(function (t) { return t !== null; });
+    g.promedio = promedio(tot);
+    g.dif = tot.length >= 2 ? Math.max.apply(null, tot) - Math.min.apply(null, tot) : null;
+    g.estado = estadoDe(g);
     g.concepto = g.promedio === null ? null : decisionPorPuntaje(g.promedio);
+    g.puesto = null;
     return g;
   });
+  // puesto por promedio dentro de cada programa y periodo (solo con evaluación completa)
+  const porCohorte = {};
+  GRUPOS.forEach(function (g) {
+    if (DECISIONES.indexOf(g.estado.id) > -1) (porCohorte[g.programa + '|' + g.periodo] = porCohorte[g.programa + '|' + g.periodo] || []).push(g);
+  });
+  Object.keys(porCohorte).forEach(function (k) {
+    const l = porCohorte[k].sort(function (a, b) { return b.promedio - a.promedio; });
+    l.forEach(function (g, i) { g.puesto = i > 0 && l[i - 1].promedio === g.promedio ? l[i - 1].puesto : i + 1; });
+  });
 }
 
-/* ---------- lista ---------- */
+/* ---------- analítica por programa y periodo ---------- */
+function analitica() {
+  const mapa = {};
+  GRUPOS.forEach(function (g) {
+    const k = g.programa + '|' + g.periodo;
+    const f = mapa[k] = mapa[k] || { programa: g.programa, periodo: g.periodo, aspirantes: 0, evaluaciones: 0, completos: 0, promedios: [], conteo: {} };
+    f.aspirantes++; f.evaluaciones += g.evals.length;
+    if (g.evals.length >= REQ) f.completos++;
+    if (DECISIONES.indexOf(g.estado.id) > -1) f.promedios.push(g.promedio);
+    f.conteo[g.estado.id] = (f.conteo[g.estado.id] || 0) + 1;
+  });
+  return Object.keys(mapa).map(function (k) {
+    const f = mapa[k];
+    f.promedio = promedio(f.promedios);
+    f.min = f.promedios.length ? Math.min.apply(null, f.promedios) : null;
+    f.max = f.promedios.length ? Math.max.apply(null, f.promedios) : null;
+    return f;
+  }).sort(function (a, b) {
+    return a.programa.localeCompare(b.programa, 'es') || (a.periodo < b.periodo ? 1 : a.periodo > b.periodo ? -1 : 0);
+  });
+}
+
+function barraProm(p) {
+  if (p === null) return null;
+  return el('span', { class: 'mini' }, el('i', { style: 'width:' + Math.min(p, 100) + '%;background:' + COLOR[decisionPorPuntaje(p).id][0] }));
+}
+
 function pintarResumen() {
-  const multi = GRUPOS.filter(function (g) { return g.evals.length >= 2; }).length;
-  const datos = [[GRUPOS.length, 'aspirantes'], [EVALS.length, 'evaluaciones registradas'], [multi, 'con 2 o más evaluaciones'], [GRUPOS.length - multi, 'con una sola evaluación']];
+  const completos = GRUPOS.filter(function (g) { return g.evals.length >= REQ; }).length;
+  const pg = promedio(GRUPOS.filter(function (g) { return DECISIONES.indexOf(g.estado.id) > -1; }).map(function (g) { return g.promedio; }));
+  const datos = [[GRUPOS.length, 'aspirantes'], [EVALS.length, 'evaluaciones registradas'], [completos + ' de ' + GRUPOS.length, 'con evaluación completa (' + REQ + ' o más evaluadores)'], [num(pg), 'promedio general de aspirantes']];
   $('resumen').replaceChildren.apply($('resumen'), datos.map(function (d) { return el('div', {}, el('b', { text: d[0] }), el('span', { text: d[1] })); }));
 
-  const cuentas = {}; let sinPuntaje = 0;
-  GRUPOS.forEach(function (g) { if (g.concepto) cuentas[g.concepto.id] = (cuentas[g.concepto.id] || 0) + 1; else sinPuntaje++; });
+  const cuentas = {};
+  GRUPOS.forEach(function (g) { cuentas[g.estado.id] = (cuentas[g.estado.id] || 0) + 1; });
   const total = GRUPOS.length || 1;
-  const orden = R.decision.slice();
-  const barra = el('div', { class: 'dist-barra', role: 'img', 'aria-label': 'Distribución de aspirantes por concepto según el promedio' });
+  const barra = el('div', { class: 'dist-barra', role: 'img', 'aria-label': 'Distribución de aspirantes por estado final' });
   const ley = el('div', { class: 'dist-leyenda' });
-  orden.forEach(function (d) {
-    const n = cuentas[d.id] || 0;
-    barra.append(el('i', { style: 'width:' + (n / total * 100) + '%;background:' + COLOR[d.id][0] }));
-    ley.append(el('span', { style: '--c:' + COLOR[d.id][0], text: d.concepto + ': ' + n }));
+  ORDEN_ESTADOS.forEach(function (id) {
+    const n = cuentas[id] || 0;
+    barra.append(el('i', { style: 'width:' + (n / total * 100) + '%;background:' + COLOR[id][0] }));
+    ley.append(el('span', { style: '--c:' + COLOR[id][0], text: nombreEstado(id) + ': ' + n }));
   });
-  if (sinPuntaje) ley.append(el('span', { style: '--c:#9AA8A3', text: 'Sin puntaje: ' + sinPuntaje }));
-  $('dist').replaceChildren(el('h3', { text: 'Aspirantes por concepto según el promedio de sus evaluadores' }), el('div', { style: 'margin-top:10px' }, barra), ley);
-
-  const progs = Array.from(new Set(GRUPOS.map(function (g) { return g.programa; }))).sort();
-  const sel = $('fProg'), actual = sel.value;
-  sel.replaceChildren(el('option', { value: '', text: 'Todos los programas' }), progs.map(function (p) { return el('option', { value: p, text: p }); }));
-  sel.value = progs.indexOf(actual) > -1 ? actual : '';
+  $('dist').replaceChildren(el('h3', { text: 'Aspirantes por estado final (según el promedio de sus evaluadores)' }), el('div', { style: 'margin-top:10px' }, barra), ley);
 }
 
-function pintarLista() {
+function pintarAnalisis() {
+  const filas = analitica();
+  const selProg = $('fProg').value, selPer = $('fPer').value;
+  $('anHead').replaceChildren(el('tr', {},
+    el('th', { text: 'Programa' }), el('th', { text: 'Periodo' }),
+    el('th', { class: 'n', text: 'Aspirantes' }), el('th', { class: 'n', text: 'Eval.' }), el('th', { class: 'n', title: 'Aspirantes con evaluación completa', text: 'Completas' }),
+    el('th', { class: 'n', text: 'Promedio' }), el('th', { class: 'n', text: 'Mín. a máx.' }),
+    ORDEN_ESTADOS.map(function (id) { return el('th', { class: 'n', title: nombreEstado(id) }, el('i', { style: '--c:' + COLOR[id][0] }), CORTO[id]); })));
+
+  const celdaConteo = function (n) { return el('td', { class: 'n' + (n ? '' : ' cero'), text: n || '·' }); };
+  $('anFilas').replaceChildren.apply($('anFilas'), filas.map(function (f) {
+    const sel = selProg === f.programa && selPer === (f.periodo || '__sin');
+    const tr = el('tr', { tabindex: '0', role: 'button', class: sel ? 'sel' : '', 'aria-label': 'Ver aspirantes de ' + f.programa + ', ' + (f.periodo || 'sin periodo') },
+      el('td', { text: f.programa }), el('td', { class: 'num', text: f.periodo || 'Sin periodo' }),
+      el('td', { class: 'n', text: f.aspirantes }), el('td', { class: 'n', text: f.evaluaciones }),
+      el('td', { class: 'n', text: f.completos + ' de ' + f.aspirantes }),
+      el('td', { class: 'n' }, num(f.promedio), barraProm(f.promedio)),
+      el('td', { class: 'n', text: f.min === null ? '—' : num(f.min) + ' a ' + num(f.max) }),
+      ORDEN_ESTADOS.map(function (id) { return celdaConteo(f.conteo[id] || 0); }));
+    const ir = function () {
+      $('fProg').value = f.programa; $('fPer').value = f.periodo || '__sin';
+      pintarAnalisis(); pintarLista();
+      $('aspirantes').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+    tr.addEventListener('click', ir);
+    tr.addEventListener('keydown', function (ev) { if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); ir(); } });
+    return tr;
+  }));
+
+  const suma = function (k) { return filas.reduce(function (a, f) { return a + f[k]; }, 0); };
+  const todos = GRUPOS.filter(function (g) { return DECISIONES.indexOf(g.estado.id) > -1; }).map(function (g) { return g.promedio; });
+  $('anPie').replaceChildren(el('tr', {},
+    el('td', { text: 'Todos los programas' }), el('td', { text: '' }),
+    el('td', { class: 'n', text: suma('aspirantes') }), el('td', { class: 'n', text: suma('evaluaciones') }),
+    el('td', { class: 'n', text: suma('completos') + ' de ' + suma('aspirantes') }),
+    el('td', { class: 'n', text: num(promedio(todos)) }),
+    el('td', { class: 'n', text: todos.length ? num(Math.min.apply(null, todos)) + ' a ' + num(Math.max.apply(null, todos)) : '—' }),
+    ORDEN_ESTADOS.map(function (id) { return el('td', { class: 'n', text: filas.reduce(function (a, f) { return a + (f.conteo[id] || 0); }, 0) }); })));
+}
+
+/* ---------- filtros y lista de aspirantes ---------- */
+function pintarFiltros() {
+  const progs = Array.from(new Set(GRUPOS.map(function (g) { return g.programa; }))).sort(function (a, b) { return a.localeCompare(b, 'es'); });
+  const pers = Array.from(new Set(GRUPOS.map(function (g) { return g.periodo; }))).sort().reverse();
+  const sp = $('fProg'), sq = $('fPer'), ap = sp.value, aq = sq.value;
+  sp.replaceChildren.apply(sp, [el('option', { value: '', text: 'Todos los programas' })].concat(progs.map(function (p) { return el('option', { value: p, text: p }); })));
+  sq.replaceChildren.apply(sq, [el('option', { value: '', text: 'Todos los periodos' })].concat(pers.map(function (p) { return el('option', { value: p || '__sin', text: p || 'Sin periodo' }); })));
+  sp.value = progs.indexOf(ap) > -1 ? ap : '';
+  sq.value = Array.prototype.some.call(sq.options, function (o) { return o.value === aq; }) ? aq : '';
+}
+
+function listaFiltrada() {
   const q = $('buscar').value.trim().toLowerCase();
-  const prog = $('fProg').value, multi = $('fMulti').checked, orden = $('orden').value;
-  let lista = GRUPOS.filter(function (g) {
+  const prog = $('fProg').value, per = $('fPer').value, multi = $('fMulti').checked, orden = $('orden').value;
+  const lista = GRUPOS.filter(function (g) {
     if (prog && g.programa !== prog) return false;
-    if (multi && g.evals.length < 2) return false;
+    if (per && g.periodo !== (per === '__sin' ? '' : per)) return false;
+    if (multi && g.evals.length < REQ) return false;
     if (!q) return true;
     return (g.nombre + ' ' + g.documento + ' ' + g.evals.map(function (e) { return e.evaluador; }).join(' ')).toLowerCase().indexOf(q) > -1;
   });
   lista.sort(function (a, b) {
     if (orden === 'nombre') return a.nombre.localeCompare(b.nombre, 'es');
     if (orden === 'promedio') return (b.promedio === null ? -1 : b.promedio) - (a.promedio === null ? -1 : a.promedio);
+    if (orden === 'programa') return a.programa.localeCompare(b.programa, 'es') || (a.periodo < b.periodo ? 1 : a.periodo > b.periodo ? -1 : 0) || ((a.puesto || 9999) - (b.puesto || 9999));
     return a.ultima < b.ultima ? 1 : -1;
   });
+  return lista;
+}
+
+function pintarLista() {
+  const lista = listaFiltrada();
   $('sinFilas').hidden = lista.length > 0;
+  $('conteo').textContent = lista.length + (lista.length === 1 ? ' aspirante' : ' aspirantes');
   $('filas').replaceChildren.apply($('filas'), lista.map(function (g) {
     const abrir = function () { verDetalle(g.clave); };
     const tr = el('tr', {},
       el('td', {}, el('button', { type: 'button', class: 'enlace', text: g.nombre }), el('span', { class: 'sub', text: 'Doc. ' + g.documento })),
       el('td', { text: g.programa }),
+      el('td', { class: 'num', text: periodoTxt(g) }),
       el('td', { class: 'num', text: g.evals.length }),
-      el('td', { class: 'num', text: g.evals.map(function (e) { return e.total === null ? '—' : e.total; }).join('  ·  ') }),
-      el('td', { class: 'num', text: num(g.promedio) }),
-      el('td', {}, etiquetaConcepto(g.concepto)),
+      el('td', { class: 'tot', text: g.evals.map(function (e) { return e.total === null ? '—' : e.total; }).join(' · ') }),
+      el('td', { class: 'num' }, num(g.promedio), barraProm(g.promedio)),
+      el('td', { class: 'num' + (g.dif !== null && g.dif >= DIF_ALTA ? ' dif-alta' : ''), text: num(g.dif) }),
+      el('td', {}, etiquetaEstado(g.estado)),
+      el('td', { class: 'num', text: g.puesto === null ? '—' : g.puesto }),
       el('td', { class: 'num', text: g.ultima.slice(0, 10) }));
     tr.addEventListener('click', abrir);
     tr.querySelector('button').addEventListener('click', function (ev) { ev.stopPropagation(); abrir(); });
@@ -338,10 +493,32 @@ function pintarLista() {
   }));
 }
 
+function csvCelda(v) {
+  const s = String(v === null || v === undefined ? '' : v);
+  return /[;"\n\r]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+}
+function exportarCSV() {
+  const enc = ['Programa', 'Periodo', 'Documento', 'Aspirante', 'Correo', 'Celular', 'Evaluaciones', 'Evaluadores', 'Totales', 'Promedio', 'Diferencia', 'Estado final', 'Puesto', 'Ultima evaluacion'];
+  const filas = listaFiltrada().map(function (g) {
+    return [g.programa, g.periodo, g.documento, g.nombre, g.correo, g.celular, g.evals.length,
+      g.evals.map(function (e) { return e.evaluador; }).join(' / '),
+      g.evals.map(function (e) { return e.total === null ? '-' : e.total; }).join(' / '),
+      g.promedio === null ? '' : num(g.promedio), g.dif === null ? '' : num(g.dif), g.estado.texto, g.puesto === null ? '' : g.puesto, g.ultima];
+  });
+  // Punto y coma y coma decimal: es lo que abre bien Excel en configuración regional en español.
+  const texto = '\uFEFF' + [enc].concat(filas).map(function (f) { return f.map(csvCelda).join(';'); }).join('\r\n');
+  const url = URL.createObjectURL(new Blob([texto], { type: 'text/csv;charset=utf-8' }));
+  const a = el('a', { href: url, download: 'Aspirantes_' + ahoraTxt().slice(0, 10) + '.csv' });
+  document.body.append(a); a.click(); a.remove();
+  setTimeout(function () { URL.revokeObjectURL(url); }, 2000);
+}
+
 function mostrarLista() {
   $('detalle').hidden = true;
   $('lista').hidden = false;
   pintarResumen();
+  pintarFiltros();
+  pintarAnalisis();
   pintarLista();
   window.scrollTo({ top: 0 });
 }
@@ -440,7 +617,8 @@ function verDetalle(clave) {
     el('div', { class: 'det-cab' },
       el('div', {},
         el('h2', { text: g.nombre }),
-        el('p', { class: 'det-datos', text: 'Doc. ' + g.documento + '   ·   ' + g.programa }),
+        el('p', { class: 'det-datos', text: 'Doc. ' + g.documento + '   ·   ' + g.programa + '   ·   Periodo ' + periodoTxt(g) }),
+        el('p', { style: 'margin-top:8px' }, etiquetaEstado(g.estado), g.puesto !== null ? el('span', { class: 'nota', text: '   Puesto ' + g.puesto + ' por promedio en su programa y periodo' }) : null),
         el('p', { class: 'det-datos', text: [g.correo, g.celular].filter(Boolean).join('   ·   ') })),
       el('div', {}, btnPDF)),
     el('p', { class: 'error', id: 'pdfMsg', role: 'alert', hidden: true }),
@@ -499,7 +677,7 @@ function pdfTxt(s) {
 }
 function nombreArchivo(g) {
   const n = (g.nombre || 'aspirante').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40);
-  return 'Reporte_consolidado_' + String(g.documento).replace(/[^A-Za-z0-9]+/g, '') + '_' + n + '.pdf';
+  return 'Reporte_consolidado_' + String(g.documento).replace(/[^A-Za-z0-9]+/g, '') + '_' + (g.periodo || 'sin_periodo') + '_' + n + '.pdf';
 }
 function ahoraTxt() {
   const d = new Date(), p = function (n) { return String(n).padStart(2, '0'); };
@@ -571,10 +749,11 @@ function generarReporte(g) {
   titulo('Aspirante');
   const fechas = Array.from(new Set(E.map(function (e) { return e.fecha; })));
   tabla({
-    body: [['Nombre', g.nombre], ['Documento de identidad', g.documento], ['Programa', g.programa],
+    body: [['Nombre', g.nombre], ['Documento de identidad', g.documento], ['Programa', g.programa], ['Periodo académico', periodoTxt(g)],
       ['Correo', g.correo || '-'], ['Celular', g.celular || '-'],
       ['Fecha(s) de entrevista', fechas.join(', ')],
-      ['Evaluadores', E.map(function (e) { return e.evaluador; }).join('; ')]
+      ['Evaluadores', E.map(function (e) { return e.evaluador; }).join('; ')],
+      ['Estado según promedio', g.estado.texto + (g.puesto !== null ? ' (puesto ' + g.puesto + ' en su programa y periodo)' : '')]
     ].map(function (f) { return [pdfTxt(f[0]), pdfTxt(f[1])]; }),
     columnStyles: { 0: { cellWidth: 140, fontStyle: 'bold', fillColor: PDF_C.tenue } }
   });
@@ -593,7 +772,7 @@ function generarReporte(g) {
     didParseCell: function (d) { if (d.column.index === 2 && d.section !== 'body') d.cell.styles.halign = 'right'; }
   });
   fuente('normal', 8.5, PDF_C.gris);
-  const nota = doc.splitTextToSize('El concepto por promedio es una referencia calculada con los rangos de la rúbrica. La decisión final corresponde al comité.', ANCHO);
+  const nota = doc.splitTextToSize((N < REQ ? 'Evaluación incompleta: hay ' + N + ' de ' + REQ + ' evaluadores requeridos. ' : '') + 'El concepto por promedio es una referencia calculada con los rangos de la rúbrica. La decisión final corresponde al comité.', ANCHO);
   doc.text(nota, M, y); y += nota.length * 11 + 4;
 
   // Comparativo
@@ -675,7 +854,7 @@ function generarReporte(g) {
     doc.setPage(i);
     linea(M, W - M, H - 38, PDF_C.linea);
     fuente('normal', 8.5, PDF_C.gris);
-    doc.text(pdfTxt('Reporte consolidado  |  ' + g.nombre + '  |  Doc. ' + g.documento), M, H - 25);
+    doc.text(pdfTxt('Reporte consolidado  |  ' + g.nombre + '  |  Doc. ' + g.documento + '  |  Periodo ' + periodoTxt(g)), M, H - 25);
     doc.text('Página ' + i + ' de ' + n, W - M, H - 25, { align: 'right' });
   }
   doc.setProperties({ title: 'Reporte consolidado - ' + pdfTxt(g.nombre), subject: pdfTxt(g.programa) });
@@ -727,7 +906,14 @@ $('salir').addEventListener('click', function () {
   $('lista').hidden = true; $('detalle').hidden = true; $('accSesion').hidden = true; $('acceso').hidden = false;
 });
 
-['buscar', 'fProg', 'orden', 'fMulti'].forEach(function (id) { $(id).addEventListener('input', pintarLista); });
+['buscar', 'fProg', 'fPer', 'orden', 'fMulti'].forEach(function (id) {
+  $(id).addEventListener('input', function () { pintarLista(); pintarAnalisis(); });
+});
+$('quitar').addEventListener('click', function () {
+  $('buscar').value = ''; $('fProg').value = ''; $('fPer').value = ''; $('fMulti').checked = false; $('orden').value = 'reciente';
+  pintarLista(); pintarAnalisis();
+});
+$('csv').addEventListener('click', exportarCSV);
 
 if (!API_URL) {
   mostrarErrorAcceso('Falta configurar API_URL en este archivo con la URL de la aplicación web de Apps Script.');
