@@ -1,0 +1,750 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<base target="_top">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Evaluación de aspirantes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+:root{
+  --fondo:#F2F5F4; --papel:#FFFFFF; --tinta:#15231F; --tinta2:#51625C;
+  --linea:#D3DDD9; --linea2:#E6ECE9;
+  --primario:#0B5D4B; --primario-t:#E1F0EB;
+  --alerta:#7A4300; --alerta-t:#FFF1D6;
+  --error:#B3261E; --error-t:#FDECEA;
+  --b-no:#B9483A; --b-esp:#D69A2D; --b-rec:#5FA58E; --b-adm:#0B5D4B;
+  --serif:'Newsreader', Georgia, 'Times New Roman', serif;
+  --sans:'Public Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+*{box-sizing:border-box}
+html{scroll-padding-top:120px}
+body{margin:0;background:var(--fondo);color:var(--tinta);font:400 16px/1.5 var(--sans)}
+h1,h2,h3,p{margin:0}
+button,input,textarea,select{font:inherit;color:inherit}
+
+.app{display:grid;grid-template-columns:320px minmax(0,1fr);gap:64px;max-width:1240px;margin:0 auto;padding:0 32px}
+
+/* ---- Panel de puntaje ---- */
+.rail{position:sticky;top:0;align-self:start;height:100vh;overflow:auto;padding:36px 0 32px}
+.rail .inst{font-size:.85rem;color:var(--tinta2)}
+.rail h1{font:500 1.75rem/1.15 var(--serif);margin-top:6px}
+.aspirante{margin-top:18px;font-weight:600;overflow-wrap:anywhere}
+.aspirante.vacio{color:var(--tinta2);font-weight:400}
+.marcador{margin-top:22px}
+.cifra{display:flex;align-items:baseline;gap:8px}
+.cifra b{font:500 3.6rem/1 var(--serif);font-variant-numeric:tabular-nums}
+.cifra span{color:var(--tinta2)}
+.banda{position:relative;display:flex;height:12px;margin-top:14px;border-radius:6px;overflow:visible}
+.banda i{display:block;height:100%}
+.banda i:first-child{border-radius:6px 0 0 6px}
+.banda i:nth-child(4){border-radius:0 6px 6px 0}
+.pin{position:absolute;top:-6px;width:4px;height:24px;margin-left:-2px;background:var(--tinta);border-radius:2px;outline:2px solid var(--fondo);transition:left .25s ease}
+.ticks{position:relative;height:18px;margin-top:6px;font-size:.75rem;color:var(--tinta2);font-variant-numeric:tabular-nums}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.concepto{margin-top:10px;font-weight:600;min-height:1.5em}
+.concepto.aviso{font-weight:400;color:var(--tinta2)}
+.componentes{list-style:none;margin:26px 0 0;padding:0;border-top:1px solid var(--linea)}
+.componentes li{padding:10px 0;border-bottom:1px solid var(--linea2)}
+.componentes .fila{display:flex;justify-content:space-between;gap:12px;font-size:.9rem}
+.componentes .fila b{font-variant-numeric:tabular-nums;font-weight:600;white-space:nowrap}
+.componentes .barra{height:4px;margin-top:6px;background:var(--linea2);border-radius:2px;overflow:hidden}
+.componentes .barra i{display:block;height:100%;background:var(--primario);width:0}
+.estado-rail{margin-top:16px;font-size:.85rem;color:var(--tinta2)}
+
+/* ---- Formulario ---- */
+main{padding:36px 0 96px;min-width:0}
+fieldset{border:0;margin:0;padding:0;min-width:0}
+.seccion{padding:36px 0 8px;border-top:1px solid var(--linea)}
+main > form > fieldset > .seccion:first-child{border-top:0;padding-top:0}
+.sec-cab{display:flex;justify-content:space-between;align-items:baseline;gap:16px;flex-wrap:wrap}
+h2{font:500 1.7rem/1.2 var(--serif)}
+.sec-pts{font-size:.95rem;color:var(--tinta2);font-variant-numeric:tabular-nums}
+.sec-pts b{color:var(--tinta);font-weight:600}
+.nota{margin-top:8px;color:var(--tinta2);max-width:64ch}
+.guia{margin:12px 0 0;padding:0 0 0 1.1rem;color:var(--tinta2);max-width:64ch}
+.guia-t{margin-top:12px;font-weight:500}
+.criterio{margin-top:26px}
+.crit-cab{display:flex;justify-content:space-between;align-items:baseline;gap:12px;flex-wrap:wrap}
+h3{font:600 1.02rem/1.3 var(--sans)}
+.tope{font-size:.88rem;color:var(--tinta2)}
+
+.campos{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px 20px;margin-top:20px}
+.campo{display:flex;flex-direction:column;gap:6px}
+.campo.ancho{grid-column:1 / -1}
+.campo label,.obs label{font-size:.9rem;font-weight:500}
+.campo label i{font-style:normal;color:var(--tinta2);font-weight:400}
+input[type=text],input[type=email],input[type=tel],input[type=date],textarea{
+  width:100%;padding:10px 12px;border:1px solid var(--linea);border-radius:6px;background:var(--papel);min-height:44px}
+textarea{resize:vertical;min-height:84px;line-height:1.45}
+input:focus-visible,textarea:focus-visible{outline:2px solid var(--primario);outline-offset:1px;border-color:var(--primario)}
+[aria-invalid=true]{border-color:var(--error) !important;background:var(--error-t)}
+
+.req{display:flex;justify-content:space-between;align-items:center;gap:16px;padding:12px 0;border-bottom:1px solid var(--linea2);flex-wrap:wrap}
+.reqs{margin-top:18px;border-top:1px solid var(--linea)}
+.escala{display:flex;gap:8px;flex-wrap:wrap}
+.escala label{position:relative;display:block}
+.escala input{position:absolute;opacity:0;inset:0;width:100%;height:100%;margin:0;cursor:pointer}
+.escala span{display:grid;place-items:center;min-width:56px;height:44px;padding:0 14px;border:1px solid var(--linea);border-radius:6px;background:var(--papel);font-weight:600;font-variant-numeric:tabular-nums}
+.escala input:checked + span{background:var(--primario);border-color:var(--primario);color:#fff}
+.escala input:focus-visible + span{outline:2px solid var(--primario);outline-offset:2px}
+.escala.invalida span{border-color:var(--error)}
+
+.niveles{margin-top:10px;border:1px solid var(--linea);border-radius:6px;background:var(--papel);overflow:hidden}
+.nivel{position:relative;display:grid;grid-template-columns:auto 1fr auto;gap:14px;align-items:center;padding:13px 16px;border-bottom:1px solid var(--linea2);cursor:pointer}
+.nivel:last-child{border-bottom:0}
+.nivel input{position:absolute;opacity:0;pointer-events:none}
+.marca{width:20px;height:20px;border:2px solid var(--tinta2);border-radius:50%;flex:none}
+.nivel-et{display:block;font-weight:500}
+.nivel-desc{display:block;font-size:.9rem;color:var(--tinta2)}
+.pts{font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.nivel:has(input:checked){background:var(--primario-t);box-shadow:inset 4px 0 0 var(--primario)}
+.nivel:has(input:checked) .marca{border-color:var(--primario);background:radial-gradient(circle,var(--primario) 42%,transparent 46%)}
+.nivel:has(input:focus-visible){outline:2px solid var(--primario);outline-offset:-2px}
+.niveles.invalida{border-color:var(--error)}
+
+.comp{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:8px 20px;align-items:center;padding:14px 0;border-bottom:1px solid var(--linea2)}
+.comps{margin-top:14px;border-top:1px solid var(--linea)}
+.suma-6{margin-top:14px;padding:10px 14px;border-radius:6px;background:var(--primario-t);font-size:.92rem}
+.suma-6.tope{background:var(--alerta-t);color:var(--alerta)}
+
+.obs{margin-top:14px;display:flex;flex-direction:column;gap:6px}
+
+.aviso-req{margin-top:14px;padding:10px 14px;border-radius:6px;background:var(--alerta-t);color:var(--alerta);font-size:.92rem}
+.omitida{margin-top:28px;padding:14px 16px;border:1px dashed var(--linea);border-radius:6px;color:var(--tinta2)}
+
+table{width:100%;border-collapse:collapse;margin-top:16px;background:var(--papel);border:1px solid var(--linea);font-size:.95rem}
+th,td{padding:10px 14px;text-align:left;border-bottom:1px solid var(--linea2)}
+td:last-child,th:last-child{text-align:right;font-variant-numeric:tabular-nums}
+tfoot td{font-weight:600;border-bottom:0;background:var(--primario-t)}
+.difiere{margin-top:12px;padding:10px 14px;border-radius:6px;background:var(--alerta-t);color:var(--alerta);font-size:.92rem}
+.sugerido{margin-top:16px;font-size:.92rem;color:var(--tinta2)}
+
+.acciones{margin-top:36px;padding-top:24px;border-top:1px solid var(--linea);display:flex;flex-direction:column;gap:14px;align-items:flex-start}
+.btn{min-height:48px;padding:0 28px;border:0;border-radius:6px;background:var(--primario);color:#fff;font-weight:600;cursor:pointer}
+.btn:hover{background:#094A3C}
+.btn:focus-visible{outline:3px solid var(--tinta);outline-offset:2px}
+.btn[disabled]{opacity:.55;cursor:progress}
+.btn.sec{background:var(--papel);color:var(--primario);border:1px solid var(--primario)}
+.btn.sec:hover{background:var(--primario-t)}
+
+.errores{margin:0 0 28px;padding:16px 20px;border:1px solid var(--error);border-radius:6px;background:var(--error-t)}
+.errores h2{font:600 1rem var(--sans);color:var(--error)}
+.errores ul{margin:8px 0 0;padding-left:1.1rem}
+.errores a{color:inherit}
+.confirma{margin:0 0 28px;padding:22px 24px;border:1px solid var(--primario);border-radius:6px;background:var(--primario-t)}
+.confirma h2{font-size:1.5rem}
+.confirma p{margin-top:6px}
+.confirma .btn{margin-top:16px}
+.prueba{margin:0 0 24px;padding:10px 14px;border-radius:6px;background:var(--alerta-t);color:var(--alerta);font-size:.9rem}
+[hidden]{display:none !important}
+
+@media (max-width:920px){
+  .app{display:block;padding:0 16px}
+  .rail{position:sticky;height:auto;overflow:visible;z-index:10;padding:10px 0 8px;background:var(--fondo);border-bottom:1px solid var(--linea)}
+  .rail .inst,.componentes,.estado-rail{display:none}
+  .rail h1{font-size:1.1rem;margin-top:0}
+  .aspirante{margin-top:2px;font-size:.9rem}
+  .marcador{margin-top:8px}
+  .cifra b{font-size:1.9rem}
+  .banda{margin-top:8px}
+  .ticks{margin-top:4px}
+  .concepto{margin-top:4px;font-size:.92rem}
+  html{scroll-padding-top:190px}
+  main{padding-top:24px}
+  .campos{grid-template-columns:1fr}
+}
+@media (prefers-reduced-motion:reduce){.pin{transition:none}}
+</style>
+</head>
+<body>
+<div class="app">
+  <aside class="rail" aria-label="Puntaje en curso">
+    <p class="inst">Posgrados, Facultad de Ciencias de la Salud</p>
+    <h1>Evaluación de aspirantes</h1>
+    <p class="aspirante vacio" id="railAspirante">Aspirante sin nombre</p>
+    <div class="marcador">
+      <div class="cifra"><b id="total">0</b><span>de 100</span></div>
+      <div class="banda" id="banda" role="img" aria-label="Escala de puntaje con los cortes de 60, 70 y 80">
+        <i style="width:60%;background:var(--b-no)"></i><i style="width:10%;background:var(--b-esp)"></i><i style="width:10%;background:var(--b-rec)"></i><i style="width:20%;background:var(--b-adm)"></i>
+        <span class="pin" id="pin" style="left:0%"></span>
+      </div>
+      <div class="ticks" aria-hidden="true"><span style="left:0%;transform:none">0</span><span style="left:60%">60</span><span style="left:70%">70</span><span style="left:80%">80</span><span style="left:100%;transform:translateX(-100%)">100</span></div>
+      <p class="concepto aviso" id="conceptoRail" aria-live="polite"></p>
+    </div>
+    <ul class="componentes" id="componentes"></ul>
+    <p class="estado-rail" id="estadoRail"></p>
+  </aside>
+
+  <main>
+    <div id="prueba" class="prueba" hidden>Vista previa: esta página no está conectada a Google Sheets, por eso no se guardará nada.</div>
+    <div id="confirmacion" class="confirma" role="status" tabindex="-1" hidden></div>
+    <div id="errores" class="errores" role="alert" tabindex="-1" hidden></div>
+
+    <p class="nota" id="cargando" role="status">Cargando la rúbrica…</p>
+    <form id="form" novalidate hidden>
+      <fieldset id="campos">
+
+        <section class="seccion" id="s-general">
+          <div class="sec-cab"><h2>Información general</h2></div>
+          <div class="campos">
+            <div class="campo"><label for="fecha">Fecha de la entrevista</label><input type="date" id="fecha" name="fecha" required></div>
+            <div class="campo"><label for="programa">Programa</label><input type="text" id="programa" name="programa" list="programas" autocomplete="off" required><datalist id="programas"></datalist></div>
+            <div class="campo ancho"><label for="nombre">Nombre del aspirante</label><input type="text" id="nombre" name="nombre" autocomplete="off" required></div>
+            <div class="campo"><label for="documento">Documento de identidad</label><input type="text" id="documento" name="documento" inputmode="numeric" autocomplete="off" required></div>
+            <div class="campo"><label for="celular">Celular <i>(opcional)</i></label><input type="tel" id="celular" name="celular" autocomplete="off"></div>
+            <div class="campo ancho"><label for="correo">Correo <i>(opcional)</i></label><input type="email" id="correo" name="correo" autocomplete="off"></div>
+            <div class="campo ancho"><label for="entrevistadores">Entrevistador(es)</label><input type="text" id="entrevistadores" name="entrevistadores" autocomplete="off" required></div>
+          </div>
+        </section>
+
+        <section class="seccion" id="s-req">
+          <div class="sec-cab"><h2 id="h-req">Verificación de requisitos</h2><span class="sec-pts">Habilitante, no suma puntos</span></div>
+          <div class="reqs" id="reqs"></div>
+          <div id="avisoReq" class="aviso-req" hidden>Hay requisitos marcados en “No”. Confirma si el aspirante continúa la evaluación.</div>
+          <div class="criterio">
+            <div class="crit-cab"><h3 id="h-concepto">Concepto</h3></div>
+            <div class="niveles" id="concepto" role="radiogroup" aria-labelledby="h-concepto">
+              <label class="nivel"><input type="radio" name="concepto" value="continua"><span class="marca" aria-hidden="true"></span><span class="nivel-txt"><span class="nivel-et">Continúa evaluación</span></span><span class="pts"></span></label>
+              <label class="nivel"><input type="radio" name="concepto" value="no_continua"><span class="marca" aria-hidden="true"></span><span class="nivel-txt"><span class="nivel-et">No continúa evaluación</span></span><span class="pts"></span></label>
+            </div>
+          </div>
+          <div class="obs"><label for="o-req">Observaciones <i style="font-style:normal;color:var(--tinta2);font-weight:400">(opcional)</i></label><textarea id="o-req" name="o-req"></textarea></div>
+        </section>
+
+        <div id="puntuacion"></div>
+
+        <div id="sinPuntaje" class="omitida" hidden>Como el aspirante no continúa la evaluación, se registrará sin puntaje. Puedes dejar recomendaciones abajo.</div>
+
+        <section class="seccion" id="s-cierre">
+          <div class="sec-cab"><h2>Cierre</h2></div>
+          <div class="campos">
+            <div class="campo ancho"><label for="recomendaciones">Recomendaciones académicas</label><textarea id="recomendaciones" name="recomendaciones"></textarea></div>
+            <div class="campo ancho"><label for="fortalezas">Fortalezas del aspirante</label><textarea id="fortalezas" name="fortalezas"></textarea></div>
+            <div class="campo ancho"><label for="porFortalecer">Aspectos por fortalecer</label><textarea id="porFortalecer" name="porFortalecer"></textarea></div>
+            <div class="campo ancho"><label for="coordinacion">Coordinación académica <i>(opcional)</i></label><input type="text" id="coordinacion" name="coordinacion" autocomplete="off"></div>
+          </div>
+          <div class="acciones">
+            <div class="campo" id="campoClave" hidden style="width:min(100%,320px)"><label for="clave">Clave de acceso</label><input type="password" id="clave" name="clave" autocomplete="off"></div>
+            <button type="submit" class="btn" id="guardar">Guardar evaluación</button>
+            <p class="nota" id="notaGuardar"></p>
+          </div>
+        </section>
+
+      </fieldset>
+    </form>
+  </main>
+</div>
+
+<script>
+/* Solo para el modo web (página alojada fuera de Google, p. ej. GitHub Pages):
+   pega aquí la URL de la aplicación web de Apps Script (termina en /exec).
+   Dentro de Apps Script se deja vacía. */
+const API_URL = 'https://script.google.com/macros/s/AKfycbzqkrvFfg8EW11LNrByYDhANz-xPe5sVu0VAscvEdwjEAOi8cBxkNlJEOyKC9fT2b1X/exec';
+
+let DATOS = null, R = null; // se cargan desde el servidor al abrir la página
+
+/* ---------- utilidades ---------- */
+const form = document.getElementById('form');
+const $ = function (id) { return document.getElementById(id); };
+
+function el(tag, attrs) {
+  const n = document.createElement(tag);
+  Object.keys(attrs || {}).forEach(function (k) {
+    const v = attrs[k];
+    if (v === false || v === null || v === undefined) return;
+    if (k === 'text') n.textContent = v;
+    else if (k === 'class') n.className = v;
+    else n.setAttribute(k, v === true ? '' : v);
+  });
+  Array.prototype.slice.call(arguments, 2).forEach(function add(c) {
+    if (c === null || c === undefined || c === false) return;
+    if (Array.isArray(c)) { c.forEach(add); return; }
+    n.append(c.nodeType ? c : document.createTextNode(c));
+  });
+  return n;
+}
+function valor(name) {
+  const e = form.elements[name];
+  return e ? String(e.value || '') : '';
+}
+function nombreCrit(c) { return c.id + (c.id.indexOf('.') > -1 ? ' ' : '. ') + c.titulo; }
+function maxCrit(c) { return c.niveles ? Math.max.apply(null, c.niveles.map(function (n) { return n.puntos; })) : c.max; }
+function hoyLocal() {
+  const d = new Date();
+  const p = function (n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate());
+}
+function decisionPorPuntaje(total) {
+  for (let i = 0; i < R.decision.length; i++) if (total >= R.decision[i].desde) return R.decision[i];
+  return R.decision[R.decision.length - 1];
+}
+function claveObs(s, c) { return s.obsSeccion ? s.id : c.id; }
+
+/* ---------- construcción de la pantalla a partir de la rúbrica ---------- */
+function escalaEl(name, opciones, lbl) {
+  return el('div', { class: 'escala', role: 'radiogroup', 'aria-labelledby': lbl },
+    opciones.map(function (o) {
+      return el('label', {}, el('input', { type: 'radio', name: name, value: o[0] }), el('span', { text: o[1] }));
+    }));
+}
+function obsEl(clave, opcional) {
+  return el('div', { class: 'obs' },
+    el('label', { for: 'o-' + clave }, 'Observaciones', DATOS.obsObligatorias && opcional !== true ? '' : ' (opcional)'),
+    el('textarea', { id: 'o-' + clave, name: 'o-' + clave }));
+}
+function nivelesEl(c, labelId) {
+  return el('div', { class: 'niveles', role: 'radiogroup', 'aria-labelledby': labelId, 'data-crit': c.id },
+    c.niveles.map(function (n) {
+      return el('label', { class: 'nivel' },
+        el('input', { type: 'radio', name: 'c-' + c.id, value: n.id }),
+        el('span', { class: 'marca', 'aria-hidden': 'true' }),
+        el('span', { class: 'nivel-txt' },
+          el('span', { class: 'nivel-et', text: n.etiqueta }),
+          n.descriptor ? el('span', { class: 'nivel-desc', text: n.descriptor }) : null),
+        el('span', { class: 'pts', text: n.puntos + (n.puntos === 1 ? ' punto' : ' puntos') }));
+    }));
+}
+
+function construirRequisitos() {
+  const cont = $('reqs');
+  R.requisitos.forEach(function (r) {
+    const opciones = [['Si', 'Sí'], ['No', 'No']];
+    if (r.permiteNA) opciones.push(['N/A', 'No aplica']);
+    cont.append(el('div', { class: 'req' },
+      el('span', { id: 'rt-' + r.id, text: r.texto }),
+      escalaEl('r-' + r.id, opciones, 'rt-' + r.id)));
+  });
+}
+
+function construirSecciones() {
+  const cont = $('puntuacion');
+  R.secciones.forEach(function (s) {
+    const unico = s.criterios.length === 1 && !!s.criterios[0].niveles;
+    const sec = el('section', { class: 'seccion', id: 's-' + s.id });
+    sec.append(el('div', { class: 'sec-cab' },
+      el('h2', { id: 'h-' + s.id, text: s.id + '. ' + s.titulo }),
+      el('span', { class: 'sec-pts', id: 'sp-' + s.id })));
+    if (s.instruccion) sec.append(el('p', { class: 'nota', text: s.instruccion }));
+    if (s.guia) {
+      sec.append(el('p', { class: 'guia-t', text: s.guiaTitulo }));
+      sec.append(el('ul', { class: 'guia' }, s.guia.map(function (g) { return el('li', { text: g }); })));
+    }
+
+    if (unico) {
+      const c = s.criterios[0];
+      sec.append(el('div', { class: 'criterio' }, nivelesEl(c, 'h-' + s.id), obsEl(claveObs(s, c))));
+    } else if (s.criterios[0].niveles) {
+      s.criterios.forEach(function (c) {
+        sec.append(el('div', { class: 'criterio' },
+          el('div', { class: 'crit-cab' },
+            el('h3', { id: 'ct-' + c.id, text: c.id + ' ' + c.titulo }),
+            el('span', { class: 'tope', text: 'hasta ' + maxCrit(c) + ' puntos' })),
+          nivelesEl(c, 'ct-' + c.id),
+          obsEl(claveObs(s, c))));
+      });
+    } else {
+      // escalas numéricas (sección 6)
+      const lista = el('div', { class: 'comps' });
+      s.criterios.forEach(function (c) {
+        const opciones = [];
+        for (let v = c.min; v <= c.max; v++) opciones.push([String(v), String(v)]);
+        lista.append(el('div', { class: 'comp' },
+          el('div', {},
+            el('h3', { id: 'ct-' + c.id, text: c.id + ' ' + c.titulo }),
+            el('span', { class: 'tope', text: 'Escala de ' + c.min + ' a ' + c.max })),
+          escalaEl('c-' + c.id, opciones, 'ct-' + c.id)));
+      });
+      sec.append(lista, el('p', { class: 'suma-6', id: 'suma-' + s.id }), obsEl(s.id));
+    }
+    cont.append(sec);
+  });
+
+  // Consolidado y decisión
+  const sec = el('section', { class: 'seccion', id: 's-final' });
+  sec.append(el('div', { class: 'sec-cab' }, el('h2', { text: 'Consolidado final' })));
+  const cuerpo = el('tbody');
+  R.secciones.forEach(function (s) {
+    cuerpo.append(el('tr', {}, el('td', { text: s.titulo }), el('td', { id: 'cf-' + s.id, text: '0 de ' + s.max })));
+  });
+  sec.append(el('table', {},
+    el('thead', {}, el('tr', {}, el('th', { text: 'Componente' }), el('th', { text: 'Puntaje' }))),
+    cuerpo,
+    el('tfoot', {}, el('tr', {}, el('td', { text: 'Total' }), el('td', { id: 'cf-total', text: '0 de 100' })))));
+
+  sec.append(el('div', { class: 'criterio' },
+    el('div', { class: 'crit-cab' }, el('h3', { id: 'h-decision', text: 'Decisión del comité' })),
+    el('div', { class: 'niveles', role: 'radiogroup', 'aria-labelledby': 'h-decision', 'data-crit': 'decision' },
+      R.decision.map(function (d) {
+        return el('label', { class: 'nivel' },
+          el('input', { type: 'radio', name: 'decision', value: d.id }),
+          el('span', { class: 'marca', 'aria-hidden': 'true' }),
+          el('span', { class: 'nivel-txt' }, el('span', { class: 'nivel-et', text: d.concepto })),
+          el('span', { class: 'pts', text: d.rango }));
+      }))));
+  sec.append(el('p', { class: 'sugerido', id: 'sugerido' }));
+  sec.append(el('p', { class: 'difiere', id: 'difiere', hidden: true }));
+  cont.append(sec);
+
+  // Panel lateral
+  const ul = $('componentes');
+  R.secciones.forEach(function (s) {
+    ul.append(el('li', {},
+      el('div', { class: 'fila' }, el('span', { text: s.titulo }), el('b', { id: 'rp-' + s.id, text: '0/' + s.max })),
+      el('div', { class: 'barra' }, el('i', { id: 'rb-' + s.id }))));
+  });
+}
+
+/* ---------- cálculo (misma regla que el servidor) ---------- */
+function calcular() {
+  const detalle = {}, sec = {};
+  let total = 0, faltan = 0, criterios = 0;
+  R.secciones.forEach(function (s) {
+    let suma = 0;
+    s.criterios.forEach(function (c) {
+      criterios++;
+      const v = valor('c-' + c.id);
+      let pts = null;
+      if (c.niveles) {
+        const n = c.niveles.filter(function (x) { return x.id === v; })[0];
+        if (n) pts = n.puntos;
+      } else if (v !== '') {
+        pts = Number(v);
+      }
+      if (pts === null) faltan++; else { detalle[c.id] = pts; suma += pts; }
+    });
+    const puntaje = Math.min(suma, s.max);
+    sec[s.id] = { suma: suma, puntaje: puntaje, max: s.max };
+    total += puntaje;
+  });
+  return { detalle: detalle, sec: sec, total: total, faltan: faltan, criterios: criterios };
+}
+
+let decisionManual = false;
+let autoId = null;
+
+function actualizar() {
+  const nombre = valor('nombre').trim();
+  const ra = $('railAspirante');
+  ra.textContent = nombre || 'Aspirante sin nombre';
+  ra.classList.toggle('vacio', !nombre);
+
+  const algunNo = R.requisitos.some(function (r) { return valor('r-' + r.id) === 'No'; });
+  const concepto = valor('concepto');
+  $('avisoReq').hidden = !(algunNo && concepto !== 'no_continua');
+
+  const continua = concepto !== 'no_continua';
+  $('puntuacion').hidden = !continua;
+  $('sinPuntaje').hidden = continua;
+
+  const c = calcular();
+  const conc = $('conceptoRail');
+  const estado = $('estadoRail');
+
+  if (!continua) {
+    $('total').textContent = '—';
+    $('pin').style.left = '0%';
+    conc.textContent = 'No continúa evaluación';
+    conc.className = 'concepto';
+    estado.textContent = '';
+    R.secciones.forEach(function (s) {
+      $('rp-' + s.id).textContent = '—';
+      $('rb-' + s.id).style.width = '0%';
+    });
+    return;
+  }
+
+  $('total').textContent = c.total;
+  $('pin').style.left = Math.min(c.total, 100) + '%';
+
+  const auto = decisionPorPuntaje(c.total);
+  autoId = auto.id;
+  if (c.faltan > 0) {
+    conc.textContent = 'Faltan ' + c.faltan + ' de ' + c.criterios + ' criterios por calificar';
+    conc.className = 'concepto aviso';
+  } else {
+    conc.textContent = auto.concepto;
+    conc.className = 'concepto';
+  }
+  estado.textContent = c.faltan > 0 ? '' : 'Todos los criterios están calificados.';
+
+  R.secciones.forEach(function (s) {
+    const x = c.sec[s.id];
+    $('rp-' + s.id).textContent = x.puntaje + '/' + s.max;
+    $('rb-' + s.id).style.width = (x.puntaje / s.max * 100) + '%';
+    $('sp-' + s.id).replaceChildren(el('b', { text: x.puntaje }), ' de ' + s.max + ' puntos');
+    $('cf-' + s.id).textContent = x.puntaje + ' de ' + s.max;
+    const nota = $('suma-' + s.id);
+    if (nota) {
+      const topeado = x.suma > s.max;
+      nota.className = 'suma-6' + (topeado ? ' tope' : '');
+      nota.textContent = topeado
+        ? 'Las escalas suman ' + x.suma + ', pero la sección vale máximo ' + s.max + '. Se registran ' + s.max + ' puntos.'
+        : 'Las escalas suman ' + x.suma + ' de ' + s.max + ' puntos.';
+    }
+  });
+  $('cf-total').textContent = c.total + ' de 100';
+
+  // decisión del comité: sigue al puntaje mientras nadie la cambie a mano
+  if (!decisionManual) {
+    const r = form.querySelector('input[name=decision][value="' + auto.id + '"]');
+    if (r) r.checked = true;
+  }
+  $('sugerido').textContent = c.faltan > 0
+    ? 'El concepto se sugiere cuando todos los criterios estén calificados.'
+    : 'Concepto según puntaje: ' + auto.concepto + '.';
+  const elegido = valor('decision');
+  const dif = $('difiere');
+  if (c.faltan === 0 && elegido && elegido !== auto.id) {
+    const d = R.decision.filter(function (x) { return x.id === elegido; })[0];
+    dif.hidden = false;
+    dif.textContent = 'La decisión elegida (' + d.concepto + ') difiere del concepto según puntaje (' + auto.concepto + '). Quedarán registrados los dos.';
+  } else {
+    dif.hidden = true;
+  }
+}
+
+/* ---------- validación y guardado ---------- */
+function validar() {
+  const e = [];
+  const falta = function (name, msg) { if (!valor(name).trim()) e.push({ msg: msg, campo: name }); };
+  falta('fecha', 'Falta la fecha de la entrevista');
+  falta('programa', 'Falta el programa');
+  falta('nombre', 'Falta el nombre del aspirante');
+  falta('documento', 'Falta el documento de identidad');
+  falta('entrevistadores', 'Falta el nombre del entrevistador');
+  if (MODO_WEB && !valor('clave')) e.push({ msg: 'Falta la clave de acceso', campo: 'clave' });
+  const correo = valor('correo').trim();
+  if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) e.push({ msg: 'El correo no tiene un formato válido', campo: 'correo' });
+  R.requisitos.forEach(function (r) {
+    if (!valor('r-' + r.id)) e.push({ msg: 'Falta responder “' + r.texto + '”', campo: 'r-' + r.id });
+  });
+  if (!valor('concepto')) e.push({ msg: 'Falta el concepto de la verificación de requisitos', campo: 'concepto' });
+  if (valor('concepto') === 'continua') {
+    R.secciones.forEach(function (s) {
+      s.criterios.forEach(function (c) {
+        if (valor('c-' + c.id) === '') e.push({ msg: 'Falta calificar ' + nombreCrit(c), campo: 'c-' + c.id });
+      });
+      if (DATOS.obsObligatorias) {
+        const claves = s.obsSeccion ? [s.id] : s.criterios.map(function (c) { return c.id; });
+        claves.forEach(function (k) {
+          if (!valor('o-' + k).trim()) e.push({ msg: 'Faltan observaciones en la sección ' + k, campo: 'o-' + k });
+        });
+      }
+    });
+  }
+  return e;
+}
+
+function primerControl(campo) {
+  const n = form.elements[campo];
+  if (!n) return null;
+  return n.length !== undefined && !n.tagName ? n[0] : n;
+}
+
+function marcarErrores(lista) {
+  form.querySelectorAll('[aria-invalid]').forEach(function (n) { n.removeAttribute('aria-invalid'); });
+  form.querySelectorAll('.invalida').forEach(function (n) { n.classList.remove('invalida'); });
+  lista.forEach(function (x) {
+    const c = primerControl(x.campo);
+    if (!c) return;
+    if (c.type === 'radio') {
+      const g = c.closest('.escala, .niveles');
+      if (g) g.classList.add('invalida');
+    } else {
+      c.setAttribute('aria-invalid', 'true');
+    }
+  });
+}
+
+function mostrarErrores(lista) {
+  marcarErrores(lista);
+  const caja = $('errores');
+  caja.replaceChildren(
+    el('h2', { text: lista.length === 1 ? 'Falta 1 dato para guardar' : 'Faltan ' + lista.length + ' datos para guardar' }),
+    el('ul', {}, lista.map(function (x) {
+      const a = el('a', { href: '#', text: x.msg });
+      a.addEventListener('click', function (ev) {
+        ev.preventDefault();
+        const c = primerControl(x.campo);
+        if (c) { c.scrollIntoView({ block: 'center' }); c.focus({ preventScroll: true }); }
+      });
+      return el('li', {}, a);
+    })));
+  caja.hidden = false;
+  caja.focus();
+  caja.scrollIntoView({ block: 'start' });
+}
+
+function armarPayload() {
+  const general = {};
+  ['fecha', 'programa', 'nombre', 'documento', 'correo', 'celular', 'entrevistadores'].forEach(function (k) { general[k] = valor(k).trim(); });
+  const requisitos = {};
+  R.requisitos.forEach(function (r) { requisitos[r.id] = valor('r-' + r.id); });
+  const respuestas = {}, observaciones = { req: valor('o-req').trim() };
+  R.secciones.forEach(function (s) {
+    s.criterios.forEach(function (c) {
+      respuestas[c.id] = valor('c-' + c.id);
+      const k = claveObs(s, c);
+      observaciones[k] = valor('o-' + k).trim();
+    });
+  });
+  return {
+    general: general,
+    requisitos: requisitos,
+    concepto: valor('concepto'),
+    respuestas: respuestas,
+    observaciones: observaciones,
+    decision: valor('decision'),
+    cierre: {
+      recomendaciones: valor('recomendaciones').trim(),
+      fortalezas: valor('fortalezas').trim(),
+      porFortalecer: valor('porFortalecer').trim(),
+      coordinacion: valor('coordinacion').trim()
+    }
+  };
+}
+
+const EN_APPS_SCRIPT = typeof google !== 'undefined' && google.script && google.script.run;
+const MODO_WEB = !EN_APPS_SCRIPT && !!API_URL;
+const CONECTADO = EN_APPS_SCRIPT || MODO_WEB;
+let sucio = false, guardado = false, guardando = false;
+
+const MSG_RED = 'No se pudo conectar con el servidor de registro. Revisa la conexión y que la implementación de Apps Script permita acceso a "Cualquier persona".';
+
+function apiDatos(ok, fallo) {
+  if (EN_APPS_SCRIPT) {
+    google.script.run.withSuccessHandler(ok).withFailureHandler(fallo).obtenerDatos();
+    return;
+  }
+  fetch(API_URL + (API_URL.indexOf('?') > -1 ? '&' : '?') + 'accion=datos')
+    .then(function (r) { return r.json(); })
+    .then(ok, function () { fallo(new Error(MSG_RED)); });
+}
+
+function apiGuardar(payload, ok, fallo) {
+  if (EN_APPS_SCRIPT) {
+    google.script.run.withSuccessHandler(ok).withFailureHandler(fallo).guardarEvaluacion(payload);
+    return;
+  }
+  // "text/plain" evita la solicitud previa (preflight) que Apps Script no responde.
+  fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ clave: valor('clave'), payload: payload })
+  })
+    .then(function (r) { return r.json(); })
+    .then(function (r) { if (r && r.ok) ok(r); else fallo(new Error((r && r.error) || 'El servidor no pudo guardar la evaluación.')); },
+          function () { fallo(new Error(MSG_RED)); });
+}
+
+function enviar(payload, ok, fallo) {
+  if (CONECTADO) { apiGuardar(payload, ok, fallo); return; }
+  setTimeout(function () {
+    const c = calcular();
+    ok({ ok: true, id: 'EV-PRUEBA', total: payload.concepto === 'continua' ? c.total : null,
+         concepto: payload.concepto === 'continua' ? (R.decision.filter(function (d) { return d.id === payload.decision; })[0] || decisionPorPuntaje(c.total)).concepto : null,
+         continua: payload.concepto === 'continua' });
+  }, 350);
+}
+
+form.addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  if (guardando || guardado) return;
+  $('errores').hidden = true;
+  const lista = validar();
+  if (lista.length) { mostrarErrores(lista); return; }
+  marcarErrores([]);
+  guardando = true;
+  if (MODO_WEB) { try { sessionStorage.setItem('rubrica_clave', valor('clave')); } catch (e) { /* sin almacenamiento */ } }
+  const btn = $('guardar');
+  btn.disabled = true;
+  btn.textContent = 'Guardando…';
+  enviar(armarPayload(), function (r) {
+    guardando = false; guardado = true;
+    $('campos').disabled = true;
+    btn.textContent = 'Evaluación guardada';
+    const c = $('confirmacion');
+    c.replaceChildren(
+      el('h2', { text: 'Evaluación guardada' }),
+      el('p', { text: r.continua
+        ? 'Registro ' + r.id + ': ' + r.total + ' de 100 puntos. Decisión del comité: ' + r.concepto + '.'
+        : 'Registro ' + r.id + ': el aspirante no continúa la evaluación, se guardó sin puntaje.' }),
+      el('button', { type: 'button', class: 'btn', id: 'nueva', text: 'Evaluar otro aspirante' }));
+    c.hidden = false;
+    $('nueva').addEventListener('click', nueva);
+    c.focus();
+    c.scrollIntoView({ block: 'start' });
+  }, function (err) {
+    guardando = false;
+    btn.disabled = false;
+    btn.textContent = 'Guardar evaluación';
+    const caja = $('errores');
+    caja.replaceChildren(
+      el('h2', { text: 'No se pudo guardar' }),
+      el('p', { text: (err && err.message ? err.message : String(err)).replace(/^Error:\s*/, '') + ' Tus respuestas siguen en pantalla; inténtalo de nuevo.' }));
+    caja.hidden = false;
+    caja.focus();
+    caja.scrollIntoView({ block: 'start' });
+  });
+});
+
+function nueva() {
+  const claveActual = valor('clave');
+  form.reset();
+  if (form.elements.clave) form.elements.clave.value = claveActual;
+  $('campos').disabled = false;
+  $('confirmacion').hidden = true;
+  $('errores').hidden = true;
+  const btn = $('guardar');
+  btn.disabled = false;
+  btn.textContent = 'Guardar evaluación';
+  decisionManual = false; guardado = false; sucio = false;
+  $('fecha').value = hoyLocal();
+  actualizar();
+  window.scrollTo({ top: 0 });
+}
+
+/* ---------- arranque ---------- */
+function iniciar(datos) {
+  DATOS = datos; R = datos.rubrica;
+  construirRequisitos();
+  construirSecciones();
+  datos.programas.forEach(function (p) { $('programas').append(el('option', { value: p })); });
+  $('fecha').value = hoyLocal();
+  $('notaGuardar').textContent = 'Se guardará como una fila nueva en la hoja de evaluaciones.';
+  if (MODO_WEB) {
+    $('campoClave').hidden = false;
+    try { form.elements.clave.value = sessionStorage.getItem('rubrica_clave') || ''; } catch (e) { /* sin almacenamiento */ }
+  }
+  $('cargando').hidden = true;
+  form.hidden = false;
+  actualizar();
+}
+function falloCarga(err) {
+  const msg = err && err.message ? err.message : String(err);
+  $('cargando').textContent = 'No se pudo cargar la rúbrica. ' + msg.replace(/^Error:\s*/, '');
+}
+
+form.addEventListener('input', function () { sucio = true; actualizar(); });
+form.addEventListener('change', function (ev) {
+  if (ev.target.name === 'decision') decisionManual = ev.target.value !== autoId;
+  actualizar();
+});
+window.addEventListener('beforeunload', function (ev) {
+  if (sucio && !guardado) { ev.preventDefault(); ev.returnValue = ''; }
+});
+
+$('prueba').hidden = CONECTADO;
+if (CONECTADO) {
+  apiDatos(iniciar, falloCarga);
+} else if (window.DATOS_PRUEBA) {
+  iniciar(window.DATOS_PRUEBA);
+} else {
+  falloCarga(new Error('Falta configurar API_URL en este archivo, o abrir la página desde la URL de Apps Script.'));
+}
+</script>
+</body>
+</html>
