@@ -1,0 +1,746 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Resultados de evaluación de aspirantes</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,400;6..72,500;6..72,600&family=Public+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js" defer></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.8.2/dist/jspdf.plugin.autotable.min.js" defer></script>
+<style>
+:root{
+  --fondo:#F2F5F4; --papel:#FFFFFF; --tinta:#15231F; --tinta2:#51625C;
+  --linea:#D3DDD9; --linea2:#E6ECE9;
+  --primario:#0B5D4B; --primario-t:#E1F0EB;
+  --alerta:#7A4300; --alerta-t:#FFF1D6;
+  --error:#B3261E; --error-t:#FDECEA;
+  --b-no:#B9483A; --b-esp:#D69A2D; --b-rec:#5FA58E; --b-adm:#0B5D4B;
+  --serif:'Newsreader', Georgia, 'Times New Roman', serif;
+  --sans:'Public Sans', system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--fondo);color:var(--tinta);font:400 16px/1.5 var(--sans)}
+h1,h2,h3,p{margin:0}
+button,input,select{font:inherit;color:inherit}
+[hidden]{display:none !important}
+.pagina{max-width:1180px;margin:0 auto;padding:32px 28px 96px}
+.cab{display:flex;justify-content:space-between;align-items:flex-end;gap:16px;flex-wrap:wrap;padding-bottom:22px;border-bottom:1px solid var(--linea)}
+.inst{font-size:.85rem;color:var(--tinta2)}
+h1{font:500 2rem/1.15 var(--serif);margin-top:4px}
+h2{font:500 1.5rem/1.2 var(--serif)}
+h3{font:600 1rem/1.3 var(--sans)}
+.nota{color:var(--tinta2);font-size:.92rem}
+.btn{min-height:44px;padding:0 22px;border:0;border-radius:6px;background:var(--primario);color:#fff;font-weight:600;cursor:pointer}
+.btn:hover{background:#094A3C}
+.btn:focus-visible{outline:3px solid var(--tinta);outline-offset:2px}
+.btn[disabled]{opacity:.55;cursor:progress}
+.btn.sec{background:var(--papel);color:var(--primario);border:1px solid var(--primario)}
+.btn.sec:hover{background:var(--primario-t)}
+.acc{display:flex;gap:10px;flex-wrap:wrap}
+input[type=text],input[type=password],input[type=search],select{padding:10px 12px;border:1px solid var(--linea);border-radius:6px;background:var(--papel);min-height:44px;width:100%}
+input:focus-visible,select:focus-visible{outline:2px solid var(--primario);outline-offset:1px;border-color:var(--primario)}
+
+/* acceso */
+.acceso{max-width:420px;margin:56px auto 0}
+.acceso form{margin-top:18px;display:flex;flex-direction:column;gap:14px}
+.campo{display:flex;flex-direction:column;gap:6px}
+.campo label{font-size:.9rem;font-weight:500}
+.error{padding:10px 14px;border-radius:6px;background:var(--error-t);color:var(--error);font-size:.92rem}
+.aviso{padding:10px 14px;border-radius:6px;background:var(--alerta-t);color:var(--alerta);font-size:.92rem}
+
+/* resumen */
+.resumen{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;margin-top:26px;border:1px solid var(--linea);border-radius:6px;background:var(--papel)}
+.resumen div{padding:16px 20px;border-right:1px solid var(--linea2)}
+.resumen div:last-child{border-right:0}
+.resumen b{display:block;font:500 2.1rem/1.1 var(--serif);font-variant-numeric:tabular-nums}
+.resumen span{font-size:.88rem;color:var(--tinta2)}
+.dist{margin-top:18px}
+.dist-barra{display:flex;height:14px;border-radius:7px;overflow:hidden;background:var(--linea2)}
+.dist-barra i{display:block;height:100%}
+.dist-leyenda{display:flex;gap:6px 22px;flex-wrap:wrap;margin-top:10px;font-size:.9rem;color:var(--tinta2)}
+.dist-leyenda span::before{content:"";display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:7px;background:var(--c)}
+
+/* filtros y lista */
+.filtros{display:grid;grid-template-columns:minmax(0,2fr) minmax(0,2fr) minmax(0,1fr) auto;gap:12px;align-items:end;margin-top:28px}
+.chk{display:flex;align-items:center;gap:8px;min-height:44px;font-size:.92rem}
+.chk input{width:18px;height:18px;accent-color:var(--primario)}
+.tabla-lista{margin-top:16px;overflow-x:auto;border:1px solid var(--linea);border-radius:6px;background:var(--papel)}
+table{width:100%;border-collapse:collapse;font-size:.95rem}
+th,td{padding:11px 14px;text-align:left;border-bottom:1px solid var(--linea2);vertical-align:top}
+thead th{background:var(--primario-t);font-weight:600;white-space:nowrap}
+tbody tr:last-child td{border-bottom:0}
+.lista td:first-child{min-width:200px}
+.lista td:nth-child(2){min-width:210px}
+.lista tbody tr{cursor:pointer}
+.lista tbody tr:hover{background:#F7FAF9}
+.enlace{background:none;border:0;padding:0;text-align:left;font-weight:600;color:var(--primario);cursor:pointer;text-decoration:underline;text-underline-offset:3px}
+.enlace:focus-visible{outline:2px solid var(--primario);outline-offset:2px}
+.sub{display:block;font-size:.85rem;color:var(--tinta2)}
+.num{font-variant-numeric:tabular-nums;white-space:nowrap}
+.etiqueta{display:inline-block;padding:2px 10px;border-radius:12px;font-size:.85rem;font-weight:600;background:var(--c-t,#eee);color:var(--c-x,#333);white-space:nowrap}
+.vacio{padding:28px;text-align:center;color:var(--tinta2)}
+
+/* detalle */
+.volver{margin-top:22px}
+.det-cab{display:flex;justify-content:space-between;align-items:flex-start;gap:16px;flex-wrap:wrap;margin-top:18px}
+.det-datos{margin-top:6px;color:var(--tinta2)}
+.seccion{margin-top:34px}
+.banda-vis{position:relative;margin:34px 6px 8px}
+.banda{display:flex;height:14px;border-radius:7px;overflow:hidden}
+.banda i{display:block;height:100%}
+.pin-n,.pin-prom{position:absolute;top:-25px;transform:translateX(-50%);display:grid;place-items:center;font-size:.78rem;font-weight:600}
+.pin-n{width:22px;height:22px;border-radius:50%;background:var(--tinta);color:#fff}
+.pin-prom{width:0;height:0;top:-14px;border-left:8px solid transparent;border-right:8px solid transparent;border-top:12px solid var(--primario)}
+.ticks{position:relative;height:18px;font-size:.75rem;color:var(--tinta2)}
+.ticks span{position:absolute;transform:translateX(-50%)}
+.leyenda{margin-top:8px;font-size:.92rem;color:var(--tinta2)}
+.comp{margin-top:14px;overflow-x:auto;border:1px solid var(--linea);border-radius:6px;background:var(--papel)}
+.comp table{min-width:640px}
+.comp th:first-child,.comp td:first-child{position:sticky;left:0;background:inherit;min-width:220px}
+.comp thead th{text-align:right;vertical-align:bottom}
+.comp thead th:first-child{text-align:left;background:var(--primario-t)}
+.comp td{text-align:right}
+.comp td:first-child{text-align:left;background:var(--papel)}
+.comp .grupo td{background:var(--linea2);font-weight:600;color:var(--primario);text-align:left}
+.comp .seccion-f td{background:var(--primario-t);font-weight:600}
+.comp .seccion-f td:first-child{background:var(--primario-t)}
+.comp .crit td:first-child{padding-left:28px;font-weight:400}
+.comp .total td{background:var(--tinta);color:#fff;font-weight:600}
+.comp .total td:first-child{background:var(--tinta)}
+.comp td.dif{background:var(--alerta-t);color:var(--alerta);font-weight:600}
+.comp .ev-fecha{display:block;font-weight:400;font-size:.8rem;color:var(--tinta2)}
+.leyenda-dif{margin-top:8px;font-size:.88rem;color:var(--tinta2)}
+.firmas{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:14px;margin-top:14px}
+.firma{padding:16px 18px;border:1px solid var(--linea);border-radius:6px;background:var(--papel)}
+.firma .nom{font:500 1.15rem/1.3 var(--serif)}
+.firma p{margin-top:4px;font-size:.9rem;color:var(--tinta2)}
+.sello{display:inline-block;margin-top:10px;padding:2px 10px;border-radius:12px;font-size:.82rem;font-weight:600}
+.sello.ok{background:var(--primario-t);color:var(--primario)}
+.sello.sin{background:var(--linea2);color:var(--tinta2)}
+.sello.invalido{background:var(--error-t);color:var(--error)}
+details{margin-top:10px;border:1px solid var(--linea);border-radius:6px;background:var(--papel)}
+summary{padding:12px 16px;cursor:pointer;font-weight:600}
+summary:focus-visible{outline:2px solid var(--primario);outline-offset:-2px}
+details .cuerpo{padding:0 16px 14px}
+details .cuerpo h4{margin:12px 0 2px;font-size:.88rem;color:var(--tinta2)}
+details .cuerpo p{white-space:pre-wrap}
+
+@media (max-width:820px){
+  .pagina{padding:20px 14px 80px}
+  .resumen{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .resumen div:nth-child(2){border-right:0}
+  .resumen div:nth-child(-n+2){border-bottom:1px solid var(--linea2)}
+  .filtros{grid-template-columns:1fr}
+  h1{font-size:1.6rem}
+}
+</style>
+</head>
+<body>
+<div class="pagina">
+  <header class="cab">
+    <div>
+      <p class="inst">Posgrados, Facultad de Ciencias de la Salud</p>
+      <h1>Resultados de evaluación de aspirantes</h1>
+    </div>
+    <div class="acc" id="accSesion" hidden>
+      <button type="button" class="btn sec" id="actualizar">Actualizar datos</button>
+      <button type="button" class="btn sec" id="salir">Cerrar sesión</button>
+    </div>
+  </header>
+
+  <!-- Acceso -->
+  <section class="acceso" id="acceso">
+    <h2>Acceso a resultados</h2>
+    <p class="nota" style="margin-top:6px">Solo para coordinación. Es una clave distinta a la que usan los evaluadores para registrar.</p>
+    <form id="formAcceso">
+      <div class="campo"><label for="clave">Clave de consulta</label><input type="password" id="clave" autocomplete="off" required></div>
+      <button type="submit" class="btn" id="entrar">Ver resultados</button>
+      <p class="error" id="errAcceso" role="alert" hidden></p>
+    </form>
+  </section>
+
+  <!-- Lista -->
+  <section id="lista" hidden>
+    <div class="resumen" id="resumen"></div>
+    <div class="dist" id="dist"></div>
+
+    <div class="filtros">
+      <div class="campo"><label for="buscar">Buscar por nombre, documento o evaluador</label><input type="search" id="buscar" autocomplete="off"></div>
+      <div class="campo"><label for="fProg">Programa</label><select id="fProg"></select></div>
+      <div class="campo"><label for="orden">Ordenar por</label>
+        <select id="orden"><option value="reciente">Más recientes</option><option value="nombre">Nombre</option><option value="promedio">Promedio (mayor a menor)</option></select></div>
+      <label class="chk"><input type="checkbox" id="fMulti"> Solo con 2 o más evaluaciones</label>
+    </div>
+
+    <div class="tabla-lista">
+      <table class="lista">
+        <thead><tr><th>Aspirante</th><th>Programa</th><th>Evaluaciones</th><th>Totales</th><th>Promedio</th><th>Concepto por promedio</th><th>Última</th></tr></thead>
+        <tbody id="filas"></tbody>
+      </table>
+      <p class="vacio" id="sinFilas" hidden>Ningún aspirante coincide con los filtros.</p>
+    </div>
+  </section>
+
+  <!-- Detalle -->
+  <section id="detalle" hidden></section>
+</div>
+
+<script>
+/* Pega aquí la URL de la aplicación web de Apps Script (termina en /exec). */
+const API_URL = 'https://script.google.com/macros/s/AKfycbzqkrvFfg8EW11LNrByYDhANz-xPe5sVu0VAscvEdwjEAOi8cBxkNlJEOyKC9fT2b1X/exec';
+
+let R = null, EVALS = [], GRUPOS = [], CLAVE = '';
+const $ = function (id) { return document.getElementById(id); };
+
+/* ---------- utilidades ---------- */
+function el(tag, attrs) {
+  const n = document.createElement(tag);
+  Object.keys(attrs || {}).forEach(function (k) {
+    const v = attrs[k];
+    if (v === false || v === null || v === undefined) return;
+    if (k === 'text') n.textContent = v;
+    else if (k === 'class') n.className = v;
+    else n.setAttribute(k, v === true ? '' : v);
+  });
+  Array.prototype.slice.call(arguments, 2).forEach(function add(c) {
+    if (c === null || c === undefined || c === false) return;
+    if (Array.isArray(c)) { c.forEach(add); return; }
+    n.append(c.nodeType ? c : document.createTextNode(c));
+  });
+  return n;
+}
+function num(x) {
+  if (x === null || x === undefined || isNaN(x)) return '—';
+  return Number.isInteger(x) ? String(x) : (Math.round(x * 10) / 10).toFixed(1).replace('.', ',');
+}
+function promedio(arr) {
+  const v = arr.filter(function (x) { return typeof x === 'number' && !isNaN(x); });
+  return v.length ? v.reduce(function (a, b) { return a + b; }, 0) / v.length : null;
+}
+function decisionPorPuntaje(total) {
+  for (let i = 0; i < R.decision.length; i++) if (total >= R.decision[i].desde) return R.decision[i];
+  return R.decision[R.decision.length - 1];
+}
+const COLOR = { admitido: ['#0B5D4B', '#E1F0EB', '#0B5D4B'], recomendaciones: ['#5FA58E', '#E6F3EE', '#25594A'], espera: ['#D69A2D', '#FFF1D6', '#7A4300'], no_admitido: ['#B9483A', '#FDECEA', '#8C2B1F'] };
+function etiquetaConcepto(d) {
+  if (!d) return el('span', { class: 'sub', text: 'Sin puntaje' });
+  const c = COLOR[d.id] || ['#999', '#eee', '#333'];
+  return el('span', { class: 'etiqueta', style: '--c-t:' + c[1] + ';--c-x:' + c[2], text: d.concepto });
+}
+function maxCrit(c) { return c.niveles ? Math.max.apply(null, c.niveles.map(function (n) { return n.puntos; })) : c.max; }
+function esUnico(s) { return s.criterios.length === 1 && !!s.criterios[0].niveles; }
+function nombreCrit(c) { return c.id + (c.id.indexOf('.') > -1 ? ' ' : '. ') + c.titulo; }
+function normDoc(s) { return String(s).replace(/\s+/g, '').toLowerCase(); }
+
+/* ---------- conexión ---------- */
+function consultar(clave) {
+  return fetch(API_URL, {
+    method: 'POST',
+    headers: { 'Content-Type': 'text/plain;charset=utf-8' },
+    body: JSON.stringify({ accion: 'consultar', clave: clave })
+  }).then(function (r) { return r.json(); }, function () {
+    throw new Error('No se pudo conectar con el servidor. Revisa la conexión y que la implementación de Apps Script permita acceso a "Cualquier persona".');
+  }).then(function (r) {
+    if (!r || !r.ok) throw new Error((r && r.error) || 'El servidor no devolvió los datos.');
+    return r;
+  });
+}
+
+function cargar(clave, alTerminar) {
+  return consultar(clave).then(function (r) {
+    CLAVE = clave;
+    R = r.rubrica; EVALS = r.evaluaciones;
+    armarGrupos();
+    $('acceso').hidden = true;
+    $('accSesion').hidden = false;
+    try { sessionStorage.setItem('resultados_clave', clave); } catch (e) { /* sin almacenamiento */ }
+    if (alTerminar) alTerminar();
+  });
+}
+
+/* ---------- agrupar por aspirante y programa ---------- */
+function armarGrupos() {
+  const mapa = {};
+  EVALS.forEach(function (e) {
+    const k = normDoc(e.documento) + '|' + e.programa;
+    (mapa[k] = mapa[k] || { clave: k, documento: e.documento, programa: e.programa, evals: [] }).evals.push(e);
+  });
+  GRUPOS = Object.keys(mapa).map(function (k) {
+    const g = mapa[k];
+    g.evals.sort(function (a, b) { return a.registrado < b.registrado ? -1 : a.registrado > b.registrado ? 1 : 0; });
+    const ult = g.evals[g.evals.length - 1];
+    g.nombre = ult.nombre;
+    g.correo = ult.correo || (g.evals.filter(function (e) { return e.correo; }).pop() || {}).correo || '';
+    g.celular = ult.celular || (g.evals.filter(function (e) { return e.celular; }).pop() || {}).celular || '';
+    g.ultima = ult.registrado;
+    g.promedio = promedio(g.evals.map(function (e) { return e.total; }));
+    g.concepto = g.promedio === null ? null : decisionPorPuntaje(g.promedio);
+    return g;
+  });
+}
+
+/* ---------- lista ---------- */
+function pintarResumen() {
+  const multi = GRUPOS.filter(function (g) { return g.evals.length >= 2; }).length;
+  const datos = [[GRUPOS.length, 'aspirantes'], [EVALS.length, 'evaluaciones registradas'], [multi, 'con 2 o más evaluaciones'], [GRUPOS.length - multi, 'con una sola evaluación']];
+  $('resumen').replaceChildren.apply($('resumen'), datos.map(function (d) { return el('div', {}, el('b', { text: d[0] }), el('span', { text: d[1] })); }));
+
+  const cuentas = {}; let sinPuntaje = 0;
+  GRUPOS.forEach(function (g) { if (g.concepto) cuentas[g.concepto.id] = (cuentas[g.concepto.id] || 0) + 1; else sinPuntaje++; });
+  const total = GRUPOS.length || 1;
+  const orden = R.decision.slice();
+  const barra = el('div', { class: 'dist-barra', role: 'img', 'aria-label': 'Distribución de aspirantes por concepto según el promedio' });
+  const ley = el('div', { class: 'dist-leyenda' });
+  orden.forEach(function (d) {
+    const n = cuentas[d.id] || 0;
+    barra.append(el('i', { style: 'width:' + (n / total * 100) + '%;background:' + COLOR[d.id][0] }));
+    ley.append(el('span', { style: '--c:' + COLOR[d.id][0], text: d.concepto + ': ' + n }));
+  });
+  if (sinPuntaje) ley.append(el('span', { style: '--c:#9AA8A3', text: 'Sin puntaje: ' + sinPuntaje }));
+  $('dist').replaceChildren(el('h3', { text: 'Aspirantes por concepto según el promedio de sus evaluadores' }), el('div', { style: 'margin-top:10px' }, barra), ley);
+
+  const progs = Array.from(new Set(GRUPOS.map(function (g) { return g.programa; }))).sort();
+  const sel = $('fProg'), actual = sel.value;
+  sel.replaceChildren(el('option', { value: '', text: 'Todos los programas' }), progs.map(function (p) { return el('option', { value: p, text: p }); }));
+  sel.value = progs.indexOf(actual) > -1 ? actual : '';
+}
+
+function pintarLista() {
+  const q = $('buscar').value.trim().toLowerCase();
+  const prog = $('fProg').value, multi = $('fMulti').checked, orden = $('orden').value;
+  let lista = GRUPOS.filter(function (g) {
+    if (prog && g.programa !== prog) return false;
+    if (multi && g.evals.length < 2) return false;
+    if (!q) return true;
+    return (g.nombre + ' ' + g.documento + ' ' + g.evals.map(function (e) { return e.evaluador; }).join(' ')).toLowerCase().indexOf(q) > -1;
+  });
+  lista.sort(function (a, b) {
+    if (orden === 'nombre') return a.nombre.localeCompare(b.nombre, 'es');
+    if (orden === 'promedio') return (b.promedio === null ? -1 : b.promedio) - (a.promedio === null ? -1 : a.promedio);
+    return a.ultima < b.ultima ? 1 : -1;
+  });
+  $('sinFilas').hidden = lista.length > 0;
+  $('filas').replaceChildren.apply($('filas'), lista.map(function (g) {
+    const abrir = function () { verDetalle(g.clave); };
+    const tr = el('tr', {},
+      el('td', {}, el('button', { type: 'button', class: 'enlace', text: g.nombre }), el('span', { class: 'sub', text: 'Doc. ' + g.documento })),
+      el('td', { text: g.programa }),
+      el('td', { class: 'num', text: g.evals.length }),
+      el('td', { class: 'num', text: g.evals.map(function (e) { return e.total === null ? '—' : e.total; }).join('  ·  ') }),
+      el('td', { class: 'num', text: num(g.promedio) }),
+      el('td', {}, etiquetaConcepto(g.concepto)),
+      el('td', { class: 'num', text: g.ultima.slice(0, 10) }));
+    tr.addEventListener('click', abrir);
+    tr.querySelector('button').addEventListener('click', function (ev) { ev.stopPropagation(); abrir(); });
+    return tr;
+  }));
+}
+
+function mostrarLista() {
+  $('detalle').hidden = true;
+  $('lista').hidden = false;
+  pintarResumen();
+  pintarLista();
+  window.scrollTo({ top: 0 });
+}
+
+/* ---------- modelo comparativo (lo usan la pantalla y el PDF) ---------- */
+function modelo(g) {
+  const E = g.evals;
+  const val = function (fn) { return E.map(function (e) { return e.continua ? fn(e) : null; }); };
+  const filas = [];
+  filas.push({ tipo: 'grupo', etiqueta: 'Verificación de requisitos' });
+  R.requisitos.forEach(function (r) {
+    filas.push({ tipo: 'texto', etiqueta: r.texto, valores: E.map(function (e) { return e.req[r.id] || '—'; }) });
+  });
+  filas.push({ tipo: 'texto', etiqueta: 'Concepto de verificación', valores: E.map(function (e) { return e.continua ? 'Continúa' : 'No continúa'; }), fuerte: true });
+  filas.push({ tipo: 'grupo', etiqueta: 'Puntajes por criterio' });
+
+  const alerta = function (valores, max) {
+    const v = valores.filter(function (x) { return typeof x === 'number'; });
+    return v.length >= 2 && (Math.max.apply(null, v) - Math.min.apply(null, v)) >= 0.4 * max;
+  };
+  R.secciones.forEach(function (s) {
+    const valS = val(function (e) { return e.sec[s.id]; });
+    filas.push({ tipo: 'seccion', etiqueta: s.id + '. ' + s.titulo, max: s.max, valores: valS, promedio: promedio(valS), alerta: esUnico(s) && alerta(valS, s.max) });
+    if (!esUnico(s)) {
+      s.criterios.forEach(function (c) {
+        const v = val(function (e) { return e.pts[c.id]; });
+        filas.push({ tipo: 'criterio', etiqueta: nombreCrit(c), max: maxCrit(c), valores: v, promedio: promedio(v), alerta: alerta(v, maxCrit(c)) });
+      });
+    }
+  });
+  const tot = E.map(function (e) { return e.total; });
+  filas.push({ tipo: 'total', etiqueta: 'TOTAL', max: 100, valores: tot, promedio: promedio(tot) });
+  const pr = promedio(tot);
+  filas.push({ tipo: 'texto', etiqueta: 'Concepto según puntaje', valores: E.map(function (e) { return e.total === null ? '—' : decisionPorPuntaje(e.total).concepto; }), promedio: pr === null ? '—' : decisionPorPuntaje(pr).concepto });
+  filas.push({ tipo: 'texto', etiqueta: 'Decisión registrada por el evaluador', valores: E.map(function (e) { return e.decision || '—'; }) });
+  return filas;
+}
+
+/* ---------- detalle ---------- */
+function bandaEl(g) {
+  const segs = [[60, 'no_admitido'], [10, 'espera'], [10, 'recomendaciones'], [20, 'admitido']];
+  const banda = el('div', { class: 'banda' }, segs.map(function (s) { return el('i', { style: 'width:' + s[0] + '%;background:' + COLOR[s[1]][0] }); }));
+  const cont = el('div', { class: 'banda-vis' }, banda);
+  g.evals.forEach(function (e, i) {
+    if (e.total !== null) cont.append(el('span', { class: 'pin-n', style: 'left:' + Math.min(e.total, 100) + '%', title: e.evaluador + ': ' + e.total, text: i + 1 }));
+  });
+  if (g.promedio !== null) cont.append(el('span', { class: 'pin-prom', style: 'left:' + Math.min(g.promedio, 100) + '%', title: 'Promedio: ' + num(g.promedio) }));
+  const ticks = el('div', { class: 'ticks', 'aria-hidden': 'true' }, [0, 60, 70, 80, 100].map(function (t) { return el('span', { style: 'left:' + t + '%', text: t }); }));
+  const ley = el('p', { class: 'leyenda', text: g.evals.map(function (e, i) { return (i + 1) + ' ' + e.evaluador + ' (' + (e.total === null ? 'sin puntaje' : e.total) + ')'; }).join('   ·   ') + (g.promedio !== null ? '   ·   Promedio ' + num(g.promedio) + ' (triángulo)' : '') });
+  return el('div', {}, cont, el('div', { style: 'margin:0 6px' }, ticks), ley);
+}
+
+function tablaComparativa(g) {
+  const filas = modelo(g);
+  const N = g.evals.length;
+  const thead = el('thead', {}, el('tr', {},
+    el('th', { text: 'Criterio' }), el('th', { text: 'Máx.' }),
+    g.evals.map(function (e, i) { return el('th', {}, (i + 1) + '. ' + e.evaluador, el('span', { class: 'ev-fecha', text: e.registrado })); }),
+    el('th', { text: 'Promedio' })));
+  const tbody = el('tbody');
+  filas.forEach(function (f) {
+    if (f.tipo === 'grupo') { tbody.append(el('tr', { class: 'grupo' }, el('td', { colspan: N + 3, text: f.etiqueta }))); return; }
+    const clase = f.tipo === 'seccion' ? 'seccion-f' : f.tipo === 'criterio' ? 'crit' : f.tipo === 'total' ? 'total' : '';
+    const dif = f.alerta ? 'dif' : '';
+    const celdas = f.valores.map(function (v) { return el('td', { class: dif, text: typeof v === 'number' || v === null ? num(v) : v }); });
+    tbody.append(el('tr', { class: clase },
+      el('td', { text: f.etiqueta }),
+      el('td', { text: f.max !== undefined ? f.max : '' }),
+      celdas,
+      el('td', { class: dif, text: f.promedio === undefined ? '' : (typeof f.promedio === 'number' || f.promedio === null ? num(f.promedio) : f.promedio) })));
+  });
+  return el('div', { class: 'comp' }, el('table', {}, thead, tbody));
+}
+
+function selloEl(e) {
+  const t = e.sello === 'ok' ? 'Sello verificado' : e.sello === 'invalido' ? 'Registro modificado después de la firma' : 'Sin sello (registro anterior)';
+  return el('span', { class: 'sello ' + e.sello, text: t });
+}
+
+function verDetalle(clave) {
+  const g = GRUPOS.filter(function (x) { return x.clave === clave; })[0];
+  if (!g) return;
+  const N = g.evals.length;
+  const cont = $('detalle');
+  const invalidos = g.evals.filter(function (e) { return e.sello === 'invalido'; });
+
+  const btnPDF = el('button', { type: 'button', class: 'btn', id: 'pdf', text: 'Descargar reporte PDF' });
+  btnPDF.addEventListener('click', function () { descargarReporte(g); });
+  const volver = el('button', { type: 'button', class: 'btn sec volver', text: 'Volver a resultados' });
+  volver.addEventListener('click', mostrarLista);
+
+  const coord = Array.from(new Set(g.evals.map(function (e) { return e.coordinacion; }).filter(Boolean)));
+
+  cont.replaceChildren.apply(cont, [
+    volver,
+    el('div', { class: 'det-cab' },
+      el('div', {},
+        el('h2', { text: g.nombre }),
+        el('p', { class: 'det-datos', text: 'Doc. ' + g.documento + '   ·   ' + g.programa }),
+        el('p', { class: 'det-datos', text: [g.correo, g.celular].filter(Boolean).join('   ·   ') })),
+      el('div', {}, btnPDF)),
+    el('p', { class: 'error', id: 'pdfMsg', role: 'alert', hidden: true }),
+    N < 2 ? el('p', { class: 'aviso', style: 'margin-top:16px', text: 'Este aspirante tiene una sola evaluación. La comparación y el promedio se completan cuando haya dos o más evaluadores.' }) : null,
+    invalidos.length ? el('p', { class: 'error', style: 'margin-top:16px', text: 'Atención: ' + invalidos.map(function (e) { return e.id + ' (' + e.evaluador + ')'; }).join(', ') + ' fue modificado en el Sheet después de firmarse. Verifica ese registro antes de usar el reporte.' }) : null,
+
+    el('div', { class: 'seccion' }, el('h3', { text: 'Puntaje total por evaluador' }), bandaEl(g)),
+    el('div', { class: 'seccion' }, el('h3', { text: 'Comparación entre evaluadores' }), tablaComparativa(g),
+      el('p', { class: 'leyenda-dif', text: 'Las celdas resaltadas marcan una diferencia del 40 % o más del puntaje máximo entre evaluadores.' })),
+    el('div', { class: 'seccion' }, el('h3', { text: 'Firmas digitales' }),
+      el('div', { class: 'firmas' }, g.evals.map(function (e, i) {
+        return el('div', { class: 'firma' },
+          el('p', { class: 'nom', style: 'color:var(--tinta);margin:0', text: (i + 1) + '. ' + e.evaluador }),
+          el('p', { text: 'Firmado el ' + e.registrado }),
+          el('p', { text: 'Registro ' + e.id }),
+          selloEl(e));
+      })),
+      el('p', { class: 'nota', style: 'margin-top:10px', text: 'Coordinación académica registrada: ' + (coord.length ? coord.join('; ') : 'sin selección') + '.' })),
+    el('div', { class: 'seccion' }, el('h3', { text: 'Observaciones y recomendaciones por evaluador' }),
+      g.evals.map(function (e) {
+        const partes = entradasTexto(e);
+        return el('details', {}, el('summary', { text: e.evaluador }),
+          el('div', { class: 'cuerpo' }, partes.length ? partes.map(function (p) { return [el('h4', { text: p[0] }), el('p', { text: p[1] })]; }) : el('p', { class: 'nota', text: 'Sin observaciones.' })));
+      }))
+  ].filter(Boolean));
+  $('lista').hidden = true;
+  cont.hidden = false;
+  cont.dataset.clave = clave;
+  window.scrollTo({ top: 0 });
+}
+
+/* Observaciones y textos de cierre de un evaluador (los usa la pantalla y el PDF). */
+function entradasTexto(e) {
+  const out = [];
+  if (e.obs.req) out.push(['Verificación de requisitos', e.obs.req]);
+  R.secciones.forEach(function (s) {
+    if (s.obsSeccion) { if (e.obs[s.id]) out.push([s.id + '. ' + s.titulo, e.obs[s.id]]); return; }
+    s.criterios.forEach(function (c) { if (e.obs[c.id]) out.push([esUnico(s) ? s.id + '. ' + s.titulo : nombreCrit(c), e.obs[c.id]]); });
+  });
+  if (e.recomendaciones) out.push(['Recomendaciones académicas', e.recomendaciones]);
+  if (e.fortalezas) out.push(['Fortalezas del aspirante', e.fortalezas]);
+  if (e.porFortalecer) out.push(['Aspectos por fortalecer', e.porFortalecer]);
+  return out;
+}
+
+/* ---------- reporte PDF consolidado ---------- */
+const PDF_C = { primario: [11, 93, 75], tinta: [21, 35, 31], gris: [81, 98, 92], linea: [211, 221, 217], tenue: [225, 240, 235], alerta: [255, 241, 214] };
+
+// Las fuentes estándar de PDF solo cubren Latin-1: se normalizan comillas y guiones tipográficos.
+function pdfTxt(s) {
+  return String(s === undefined || s === null ? '' : s)
+    .replace(/\r/g, '').replace(/\t/g, ' ')
+    .replace(/[\u201C\u201D]/g, '"').replace(/[\u2018\u2019]/g, "'")
+    .replace(/[\u2013\u2014]/g, '-').replace(/\u2026/g, '...').replace(/\u2022/g, '-').replace(/\u00B7/g, '-')
+    .replace(/[^\n\u0020-\u007E\u00A0-\u00FF]/g, '?');
+}
+function nombreArchivo(g) {
+  const n = (g.nombre || 'aspirante').normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^A-Za-z0-9]+/g, '_').replace(/^_+|_+$/g, '').slice(0, 40);
+  return 'Reporte_consolidado_' + String(g.documento).replace(/[^A-Za-z0-9]+/g, '') + '_' + n + '.pdf';
+}
+function ahoraTxt() {
+  const d = new Date(), p = function (n) { return String(n).padStart(2, '0'); };
+  return d.getFullYear() + '-' + p(d.getMonth() + 1) + '-' + p(d.getDate()) + ' ' + p(d.getHours()) + ':' + p(d.getMinutes());
+}
+
+function generarReporte(g) {
+  const E = g.evals, N = E.length;
+  const doc = new window.jspdf.jsPDF({ unit: 'pt', format: 'letter', orientation: N > 4 ? 'landscape' : 'portrait' });
+  const W = doc.internal.pageSize.getWidth(), H = doc.internal.pageSize.getHeight();
+  const M = 42, ANCHO = W - 2 * M, BAJO = H - 54;
+  let y = M;
+
+  const color = function (c) { doc.setTextColor(c[0], c[1], c[2]); };
+  const linea = function (x1, x2, yy, c, ancho) { doc.setDrawColor(c[0], c[1], c[2]); doc.setLineWidth(ancho || 0.6); doc.line(x1, yy, x2, yy); };
+  const fuente = function (estilo, tam, c) { doc.setFont('helvetica', estilo); doc.setFontSize(tam); color(c || PDF_C.tinta); };
+  const espacio = function (n) { if (y + n > BAJO) { doc.addPage(); y = M; } };
+
+  function titulo(izq, der) {
+    espacio(70); y += 12;
+    fuente('bold', 11.5, PDF_C.primario); doc.text(pdfTxt(izq), M, y);
+    if (der) { fuente('normal', 9.5, PDF_C.gris); doc.text(pdfTxt(der), W - M, y, { align: 'right' }); }
+    y += 5; linea(M, W - M, y, PDF_C.linea); y += 8;
+  }
+  function tabla(opts) {
+    doc.autoTable(Object.assign({
+      startY: y, margin: { left: M, right: M, bottom: 54 }, theme: 'grid',
+      styles: { font: 'helvetica', fontSize: 9, cellPadding: { top: 3.5, bottom: 3.5, left: 5, right: 5 }, textColor: PDF_C.tinta, lineColor: PDF_C.linea, lineWidth: 0.5, overflow: 'linebreak' },
+      headStyles: { fillColor: PDF_C.tenue, textColor: PDF_C.tinta, fontStyle: 'bold' },
+      footStyles: { fillColor: PDF_C.tenue, textColor: PDF_C.tinta, fontStyle: 'bold' }
+    }, opts));
+    y = doc.lastAutoTable.finalY + 10;
+  }
+  function parrafo(etiqueta, texto) {
+    const t = pdfTxt(texto).trim();
+    if (!t) return;
+    fuente('normal', 9.5);
+    const lineas = doc.splitTextToSize(t, ANCHO);
+    espacio(34);
+    if (etiqueta) { fuente('bold', 9.5, PDF_C.gris); doc.text(pdfTxt(etiqueta), M, y + 9); y += 14; }
+    fuente('normal', 9.5);
+    lineas.forEach(function (l) { if (y + 12 > BAJO) { doc.addPage(); y = M; } doc.text(l, M, y + 9); y += 12; });
+    y += 5;
+  }
+
+  const promTot = g.promedio;
+  const conceptoProm = promTot === null ? null : decisionPorPuntaje(promTot);
+  const totales = E.map(function (e) { return e.total; }).filter(function (t) { return t !== null; });
+
+  // Encabezado
+  fuente('bold', 16); doc.text('Reporte consolidado de evaluación', M, y + 12);
+  fuente('bold', 10, PDF_C.primario); doc.text(N + (N === 1 ? ' evaluación' : ' evaluaciones'), W - M, y + 11, { align: 'right' });
+  y += 28;
+  fuente('normal', 9.5, PDF_C.gris); doc.text('Posgrados, Facultad de Ciencias de la Salud', M, y + 2);
+  doc.text('Generado: ' + ahoraTxt(), W - M, y + 2, { align: 'right' });
+  y += 10; linea(M, W - M, y, PDF_C.primario, 1.4); y += 4;
+
+  const alterados = E.filter(function (e) { return e.sello === 'invalido'; });
+  if (alterados.length) {
+    const aviso = doc.splitTextToSize(pdfTxt('ATENCION: ' + alterados.map(function (e) { return e.id + ' (' + e.evaluador + ')'; }).join(', ') +
+      ' fue modificado en el Sheet despues de firmarse. Verifique ese registro antes de usar este reporte.'), ANCHO - 16);
+    y += 8;
+    doc.setFillColor(253, 236, 234); doc.rect(M, y, ANCHO, aviso.length * 12 + 10, 'F');
+    fuente('bold', 9.5, [179, 38, 30]); doc.text(aviso, M + 8, y + 15);
+    y += aviso.length * 12 + 12;
+  }
+
+  // Aspirante
+  titulo('Aspirante');
+  const fechas = Array.from(new Set(E.map(function (e) { return e.fecha; })));
+  tabla({
+    body: [['Nombre', g.nombre], ['Documento de identidad', g.documento], ['Programa', g.programa],
+      ['Correo', g.correo || '-'], ['Celular', g.celular || '-'],
+      ['Fecha(s) de entrevista', fechas.join(', ')],
+      ['Evaluadores', E.map(function (e) { return e.evaluador; }).join('; ')]
+    ].map(function (f) { return [pdfTxt(f[0]), pdfTxt(f[1])]; }),
+    columnStyles: { 0: { cellWidth: 140, fontStyle: 'bold', fillColor: PDF_C.tenue } }
+  });
+
+  // Resumen de resultados
+  titulo('Resumen de resultados', totales.length >= 2 ? 'Rango: ' + num(Math.min.apply(null, totales)) + ' a ' + num(Math.max.apply(null, totales)) : '');
+  tabla({
+    head: [['Evaluador', 'Firma (fecha y hora)', 'Total', 'Concepto según puntaje', 'Decisión registrada']],
+    body: E.map(function (e) {
+      return [pdfTxt(e.evaluador), e.registrado, e.total === null ? '-' : num(e.total) + ' de 100',
+        e.total === null ? 'No continúa evaluación' : pdfTxt(decisionPorPuntaje(e.total).concepto), pdfTxt(e.decision || '-')];
+    }),
+    foot: [['Promedio de evaluadores', '', promTot === null ? '-' : num(promTot) + ' de 100', conceptoProm ? pdfTxt(conceptoProm.concepto) : '-', '']],
+    showFoot: 'lastPage',
+    columnStyles: { 2: { halign: 'right' } },
+    didParseCell: function (d) { if (d.column.index === 2 && d.section !== 'body') d.cell.styles.halign = 'right'; }
+  });
+  fuente('normal', 8.5, PDF_C.gris);
+  const nota = doc.splitTextToSize('El concepto por promedio es una referencia calculada con los rangos de la rúbrica. La decisión final corresponde al comité.', ANCHO);
+  doc.text(nota, M, y); y += nota.length * 11 + 4;
+
+  // Comparativo
+  const filas = modelo(g);
+  titulo('Comparación entre evaluadores');
+  const columnas = 2 + N + 1;
+  const wCrit = N > 4 ? 180 : 150, wMax = 32, wProm = 50;
+  const wEv = (ANCHO - wCrit - wMax - wProm) / N;
+  const estilos = {};
+  estilos[0] = { cellWidth: wCrit }; estilos[1] = { cellWidth: wMax, halign: 'right' };
+  for (let i = 0; i < N; i++) estilos[2 + i] = { cellWidth: wEv, halign: 'right' };
+  estilos[columnas - 1] = { cellWidth: wProm, halign: 'right' };
+  const cuerpo = filas.map(function (f) {
+    if (f.tipo === 'grupo') return [{ content: pdfTxt(f.etiqueta), colSpan: columnas, styles: { fillColor: PDF_C.tenue, fontStyle: 'bold', textColor: PDF_C.primario, halign: 'left' } }];
+    const base = f.tipo === 'seccion' ? { fillColor: PDF_C.tenue, fontStyle: 'bold' }
+      : f.tipo === 'total' ? { fillColor: PDF_C.tinta, textColor: [255, 255, 255], fontStyle: 'bold' } : {};
+    const cel = function (txt, extra, alerta) {
+      return { content: pdfTxt(txt), styles: Object.assign({}, base, extra || {}, alerta ? { fillColor: PDF_C.alerta, fontStyle: 'bold' } : {}) };
+    };
+    const fila = [cel((f.tipo === 'criterio' ? '    ' : '') + f.etiqueta, { halign: 'left', fontStyle: f.fuerte ? 'bold' : (base.fontStyle || 'normal') }),
+      cel(f.max !== undefined ? f.max : '')];
+    f.valores.forEach(function (v) { fila.push(cel(typeof v === 'number' || v === null ? num(v) : v, {}, f.alerta)); });
+    fila.push(cel(f.promedio === undefined || typeof f.promedio === 'string' ? '' : num(f.promedio), {}, f.alerta));
+    return fila;
+  });
+  tabla({
+    head: [['Criterio', 'Máx.'].concat(E.map(function (e, i) { return pdfTxt((i + 1) + '. ' + e.evaluador + '\n' + e.registrado); }), ['Prom.'])],
+    body: cuerpo,
+    columnStyles: estilos,
+    styles: { fontSize: N > 4 ? 8 : 8.5, cellPadding: { top: 3, bottom: 3, left: 4, right: 4 }, textColor: PDF_C.tinta, lineColor: PDF_C.linea, lineWidth: 0.5, overflow: 'linebreak' },
+    didParseCell: function (d) { if (d.section === 'head' && d.column.index > 0) d.cell.styles.halign = 'right'; }
+  });
+  fuente('normal', 8.5, PDF_C.gris);
+  const topes = R.secciones.filter(function (s) { return s.criterios.reduce(function (a, c) { return a + maxCrit(c); }, 0) > s.max; });
+  const notas = ['Las filas sombreadas en ámbar indican una diferencia del 40 % o más del puntaje máximo entre evaluadores.'];
+  topes.forEach(function (s) { notas.push('En la sección ' + s.id + ' el puntaje se limita a ' + s.max + ' puntos aunque las escalas sumen más.'); });
+  notas.push('El promedio se calcula solo con los evaluadores cuya evaluación continuó.');
+  notas.forEach(function (t) { const l = doc.splitTextToSize(t, ANCHO); espacio(l.length * 11 + 2); doc.text(l, M, y + 8); y += l.length * 11 + 2; });
+  y += 6;
+
+  // Observaciones por evaluador
+  const conTexto = E.filter(function (e) { return entradasTexto(e).length; });
+  if (conTexto.length) {
+    titulo('Observaciones y recomendaciones por evaluador');
+    conTexto.forEach(function (e) {
+      espacio(40);
+      fuente('bold', 10.5, PDF_C.primario); doc.text(pdfTxt(e.evaluador), M, y + 10); y += 16;
+      entradasTexto(e).forEach(function (p) { parrafo(p[0], p[1]); });
+      y += 4;
+    });
+  }
+
+  // Firmas digitales
+  titulo('Firmas digitales de los evaluadores');
+  tabla({
+    head: [['Evaluador', 'Firmado digitalmente', 'Registro', 'Sello de integridad']],
+    body: E.map(function (e) {
+      const sello = e.sello === 'ok' ? e.selloCodigo + ' (verificado)' : e.sello === 'invalido' ? 'NO VERIFICADO: el registro cambió después de firmarse' : 'Sin sello (registro anterior)';
+      return [pdfTxt(e.evaluador), e.registrado, e.id, sello];
+    }),
+    columnStyles: { 1: { cellWidth: 100 }, 2: { cellWidth: 60 }, 3: { cellWidth: N > 4 ? 300 : 190, font: 'courier', fontSize: 8 } }
+  });
+  fuente('normal', 8.5, PDF_C.gris);
+  const decl = doc.splitTextToSize('Cada evaluador registró su evaluación por separado; su firma corresponde a su nombre y a la fecha y hora en que el servidor guardó el registro. El sello de integridad permite comprobar que los puntajes no fueron modificados después de la firma.', ANCHO);
+  espacio(decl.length * 11 + 8); doc.text(decl, M, y + 8); y += decl.length * 11 + 12;
+
+  // Coordinación
+  const coord = Array.from(new Set(E.map(function (e) { return e.coordinacion; }).filter(Boolean)));
+  espacio(110); y += 50;
+  const aw = 230;
+  linea(M, M + aw, y, PDF_C.tinta, 0.8);
+  fuente('bold', 9.5); doc.text('Firma coordinación académica', M, y + 13);
+  fuente('normal', 9, PDF_C.gris);
+  doc.text(doc.splitTextToSize(pdfTxt(coord.join('; ') || ' '), aw).slice(0, 3), M, y + 26);
+
+  // Pie
+  const n = doc.getNumberOfPages();
+  for (let i = 1; i <= n; i++) {
+    doc.setPage(i);
+    linea(M, W - M, H - 38, PDF_C.linea);
+    fuente('normal', 8.5, PDF_C.gris);
+    doc.text(pdfTxt('Reporte consolidado  |  ' + g.nombre + '  |  Doc. ' + g.documento), M, H - 25);
+    doc.text('Página ' + i + ' de ' + n, W - M, H - 25, { align: 'right' });
+  }
+  doc.setProperties({ title: 'Reporte consolidado - ' + pdfTxt(g.nombre), subject: pdfTxt(g.programa) });
+  return doc;
+}
+
+function descargarReporte(g) {
+  const msg = $('pdfMsg');
+  msg.hidden = true;
+  if (!(window.jspdf && window.jspdf.jsPDF && typeof window.jspdf.jsPDF.API.autoTable === 'function')) {
+    msg.textContent = 'No se pudo cargar el generador de PDF. Revisa tu conexión, recarga la página y vuelve a intentarlo.';
+    msg.hidden = false;
+    return;
+  }
+  try {
+    generarReporte(g).save(nombreArchivo(g));
+  } catch (e) {
+    msg.textContent = 'No se pudo generar el PDF (' + (e && e.message ? e.message : e) + ').';
+    msg.hidden = false;
+  }
+}
+
+/* ---------- arranque ---------- */
+function mostrarErrorAcceso(txt) { const p = $('errAcceso'); p.textContent = txt; p.hidden = false; }
+
+$('formAcceso').addEventListener('submit', function (ev) {
+  ev.preventDefault();
+  $('errAcceso').hidden = true;
+  const btn = $('entrar');
+  btn.disabled = true; btn.textContent = 'Cargando…';
+  cargar($('clave').value, mostrarLista).catch(function (e) {
+    mostrarErrorAcceso(e.message);
+  }).then(function () { btn.disabled = false; btn.textContent = 'Ver resultados'; });
+});
+
+$('actualizar').addEventListener('click', function () {
+  const b = $('actualizar'); b.disabled = true; b.textContent = 'Actualizando…';
+  const enDetalle = !$('detalle').hidden;
+  const actual = enDetalle ? ($('detalle').dataset.clave || '') : '';
+  cargar(CLAVE, function () { if (enDetalle && GRUPOS.some(function (g) { return g.clave === actual; })) verDetalle(actual); else mostrarLista(); })
+    .catch(function (e) { alert(e.message); })
+    .then(function () { b.disabled = false; b.textContent = 'Actualizar datos'; });
+});
+
+$('salir').addEventListener('click', function () {
+  CLAVE = ''; EVALS = []; GRUPOS = [];
+  try { sessionStorage.removeItem('resultados_clave'); } catch (e) { /* nada */ }
+  $('clave').value = '';
+  $('lista').hidden = true; $('detalle').hidden = true; $('accSesion').hidden = true; $('acceso').hidden = false;
+});
+
+['buscar', 'fProg', 'orden', 'fMulti'].forEach(function (id) { $(id).addEventListener('input', pintarLista); });
+
+if (!API_URL) {
+  mostrarErrorAcceso('Falta configurar API_URL en este archivo con la URL de la aplicación web de Apps Script.');
+  $('entrar').disabled = true;
+} else {
+  let guardada = '';
+  try { guardada = sessionStorage.getItem('resultados_clave') || ''; } catch (e) { /* nada */ }
+  if (guardada) {
+    $('entrar').disabled = true; $('entrar').textContent = 'Cargando…';
+    cargar(guardada, mostrarLista).catch(function () { /* pide la clave de nuevo */ })
+      .then(function () { $('entrar').disabled = false; $('entrar').textContent = 'Ver resultados'; });
+  }
+}
+</script>
+</body>
+</html>
