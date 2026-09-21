@@ -281,6 +281,75 @@ function etiquetaEstado(e) {
   return el('span', { class: 'etiqueta', style: '--c-t:' + c[1] + ';--c-x:' + c[2], text: e.texto });
 }
 function periodoTxt(g) { return g.periodo || 'Sin periodo'; }
+/* ---------- estandarización de mayúsculas y minúsculas (solo presentación) ----------
+   Lo guardado en el Sheet no se toca (queda como lo escribió cada persona y firmado).
+   Aquí se ordena lo que se muestra en pantalla, en el PDF y en el CSV. */
+const PARTICULAS = ['de', 'del', 'la', 'las', 'los', 'y', 'e', 'da', 'di'];
+const TITULOS = { dr: 'Dr.', dra: 'Dra.', sr: 'Sr.', sra: 'Sra.', ing: 'Ing.', mg: 'Mg.', lic: 'Lic.', prof: 'Prof.', phd: 'PhD', md: 'MD', msc: 'MSc' };
+const ROMANOS = ['ii', 'iii', 'iv', 'vi'];
+// Siglas que se escriben en mayúsculas dentro de textos libres. Agrega las que uses con frecuencia.
+const SIGLAS = ['IPS', 'EPS', 'ARL', 'TIC', 'TICS', 'SST', 'UNAB', 'CES', 'FHIR', 'UCI', 'OMS', 'OPS', 'DANE', 'ICBF', 'RIPS', 'HCE', 'ISO', 'PDF', 'COVID', 'SGSSS', 'SISPRO', 'PQRS'];
+const NO_MAYUS_TRAS = ['etc', 'ej', 'aprox', 'vs', 'pág', 'pag', 'núm']; // abreviaturas que suelen seguirse de minúscula
+let NOMBRES_COORD = {}, PROG_CANON = {};
+
+function claveTexto(s) {
+  return String(s === undefined || s === null ? '' : s).normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+}
+function mayus1(s) { return s.charAt(0).toUpperCase() + s.slice(1); }
+
+/** Nombres de personas: "MARIA DE LOS ANGELES pérez" -> "Maria de los Angeles Pérez". No agrega tildes que no estén escritas. */
+function nombrePropio(s) {
+  const t = String(s === undefined || s === null ? '' : s).replace(/\s+/g, ' ').trim();
+  if (!t) return '';
+  return t.split(' ').map(function (palabra, i) {
+    if (/\d/.test(palabra)) return palabra;
+    if (/[a-záéíóúñü][A-ZÁÉÍÓÚÑÜ]/.test(palabra)) return palabra;                     // McDonald, DiCaprio: se respeta
+    const base = palabra.toLowerCase().replace(/\.$/, '');
+    if (TITULOS[base] !== undefined && palabra.length <= 5) return TITULOS[base];
+    if (i > 0 && PARTICULAS.indexOf(base) > -1 && base === palabra.toLowerCase()) return base;
+    if (i > 0 && ROMANOS.indexOf(base) > -1) return base.toUpperCase();
+    if (/^[a-záéíóúñü]\.?$/i.test(palabra) && !(PARTICULAS.indexOf(base) > -1 && i > 0)) return palabra.charAt(0).toUpperCase() + '.';
+    return palabra.split('-').map(function (parte) {
+      return parte.split("'").map(function (seg) { return mayus1(seg.toLowerCase()); }).join("'");
+    }).join('-');
+  }).join(' ');
+}
+
+/** Textos libres: primera letra de cada oración en mayúscula. Si todo estaba en mayúsculas, pasa a minúsculas normales; las siglas de SIGLAS se conservan. */
+function textoLibre(s) {
+  let t = String(s === undefined || s === null ? '' : s).replace(/\r/g, '').replace(/[ \t]+/g, ' ').replace(/ *\n */g, '\n').trim();
+  if (!t) return '';
+  const hayLetras = /[a-záéíóúñü]/i.test(t);
+  const todoMayus = hayLetras && t === t.toUpperCase();
+  const todoMinus = hayLetras && t === t.toLowerCase();
+  if (todoMayus) t = t.toLowerCase();
+  if (todoMayus || todoMinus) {
+    SIGLAS.forEach(function (sg) {
+      t = t.replace(new RegExp('(?<![\\p{L}\\p{N}])' + sg + '(?![\\p{L}\\p{N}])', 'giu'), sg);
+    });
+  }
+  return t.replace(/(^|[.!?]\s+|\n|[¿¡])([a-záéíóúñü])/g, function (m, pre, letra, pos) {
+    if (/^[.!?]/.test(pre)) {
+      const previo = t.slice(Math.max(0, pos - 6), pos).toLowerCase().match(/([a-záéíóúñ]+)$/);
+      if (previo && NO_MAYUS_TRAS.indexOf(previo[1]) > -1) return m;
+    }
+    return pre + letra.toUpperCase();
+  });
+}
+
+function programaTxt(p) { const k = claveTexto(p); return PROG_CANON[k] || String(p || '').trim(); }
+function coordTxt(v) { const s = String(v || '').trim(); return s ? (NOMBRES_COORD[s] || nombrePropio(s)) : ''; }
+
+function estandarizar(e) {
+  e.evaluador = nombrePropio(e.evaluador);
+  e.nombre = nombrePropio(e.nombre);
+  e.correo = String(e.correo || '').trim().toLowerCase();
+  e.programa = programaTxt(e.programa);
+  e.coordinacion = coordTxt(e.coordinacion);
+  Object.keys(e.obs).forEach(function (k) { e.obs[k] = textoLibre(e.obs[k]); });
+  ['recomendaciones', 'fortalezas', 'porFortalecer'].forEach(function (k) { e[k] = textoLibre(e[k]); });
+}
+
 function maxCrit(c) { return c.niveles ? Math.max.apply(null, c.niveles.map(function (n) { return n.puntos; })) : c.max; }
 function esUnico(s) { return s.criterios.length === 1 && !!s.criterios[0].niveles; }
 function nombreCrit(c) { return c.id + (c.id.indexOf('.') > -1 ? ' ' : '. ') + c.titulo; }
@@ -304,6 +373,10 @@ function cargar(clave, alTerminar) {
   return consultar(clave).then(function (r) {
     CLAVE = clave;
     R = r.rubrica; EVALS = r.evaluaciones; REQ = r.evaluadoresRequeridos || 2;
+  NOMBRES_COORD = r.nombresCoordinacion || {};
+  PROG_CANON = {};
+  (r.programas || []).forEach(function (p) { PROG_CANON[claveTexto(p)] = p; });
+  EVALS.forEach(estandarizar);
     armarGrupos();
     $('acceso').hidden = true;
     $('accSesion').hidden = false;
@@ -550,7 +623,7 @@ function modelo(g) {
     }
   });
   const tot = E.map(function (e) { return e.total; });
-  filas.push({ tipo: 'total', etiqueta: 'TOTAL', max: 100, valores: tot, promedio: promedio(tot) });
+  filas.push({ tipo: 'total', etiqueta: 'Total', max: 100, valores: tot, promedio: promedio(tot) });
   const pr = promedio(tot);
   filas.push({ tipo: 'texto', etiqueta: 'Concepto según puntaje', valores: E.map(function (e) { return e.total === null ? '—' : decisionPorPuntaje(e.total).concepto; }), promedio: pr === null ? '—' : decisionPorPuntaje(pr).concepto });
   filas.push({ tipo: 'texto', etiqueta: 'Decisión registrada por el evaluador', valores: E.map(function (e) { return e.decision || '—'; }) });
@@ -737,8 +810,8 @@ function generarReporte(g) {
 
   const alterados = E.filter(function (e) { return e.sello === 'invalido'; });
   if (alterados.length) {
-    const aviso = doc.splitTextToSize(pdfTxt('ATENCION: ' + alterados.map(function (e) { return e.id + ' (' + e.evaluador + ')'; }).join(', ') +
-      ' fue modificado en el Sheet despues de firmarse. Verifique ese registro antes de usar este reporte.'), ANCHO - 16);
+    const aviso = doc.splitTextToSize(pdfTxt('Atención: ' + alterados.map(function (e) { return e.id + ' (' + e.evaluador + ')'; }).join(', ') +
+      ' fue modificado en el Sheet después de firmarse. Verifique ese registro antes de usar este reporte.'), ANCHO - 16);
     y += 8;
     doc.setFillColor(253, 236, 234); doc.rect(M, y, ANCHO, aviso.length * 12 + 10, 'F');
     fuente('bold', 9.5, [179, 38, 30]); doc.text(aviso, M + 8, y + 15);
@@ -830,7 +903,7 @@ function generarReporte(g) {
   tabla({
     head: [['Evaluador', 'Firmado digitalmente', 'Registro', 'Sello de integridad']],
     body: E.map(function (e) {
-      const sello = e.sello === 'ok' ? e.selloCodigo + ' (verificado)' : e.sello === 'invalido' ? 'NO VERIFICADO: el registro cambió después de firmarse' : 'Sin sello (registro anterior)';
+      const sello = e.sello === 'ok' ? e.selloCodigo + ' (verificado)' : e.sello === 'invalido' ? 'No verificado: el registro cambió después de firmarse' : 'Sin sello (registro anterior)';
       return [pdfTxt(e.evaluador), e.registrado, e.id, sello];
     }),
     columnStyles: { 1: { cellWidth: 100 }, 2: { cellWidth: 60 }, 3: { cellWidth: N > 4 ? 300 : 190, font: 'courier', fontSize: 8 } }
